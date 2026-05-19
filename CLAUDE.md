@@ -92,7 +92,21 @@ To be deployed on cPanel (Rumahweb shared hosting).
 - Phase 1 complete: folder structure, SQL tables, HTML→PHP rename, git setup
 - Phase 2 complete: admin login, dashboard, logout, seed admin user
 - Phase 3 complete: settings table, theme system DB-driven, all pages wired
-- Next: admin theme switcher page, then admin rooms management
+- Phase 5 complete: admin audit, media library rewrite (images/videos/splats),
+  CSRF on all POST endpoints, page visibility wired to front-end nav,
+  content/layout/colors persisted to DB and injected server-side as window.ROSALI,
+  all front-end upload UI removed, gallery.php reads from media table,
+  splat (gsplat.js) support ready-but-dormant behind splat_enabled flag
+
+## Front-end data flow (Phase 5)
+- Every front-end PHP page includes includes/front_init.php which emits
+  `<script>window.ROSALI = {...}</script>` with theme, lang, content overrides,
+  layout prefs, color overrides, page visibility, media slot URLs, splat flag.
+- shared.jsx reads exclusively from window.ROSALI — no localStorage for content.
+- Media table is the source of truth for all uploaded files. Slot assignments
+  use `assigned_to = 'slot:<key>'`; rooms use `assigned_to = 'room_<key>_splat'` etc.
+- Splat .splat/.ksplat files load gsplat.js from CDN on rooms.php only when
+  splat_enabled = 1 AND that room has an assigned splat.
 
 ## Admin Credentials (local dev only)
 - Username: admin
