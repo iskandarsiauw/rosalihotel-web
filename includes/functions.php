@@ -3,8 +3,7 @@ require_once __DIR__ . '/db.php';
 
 /* ─── Settings helpers ─── */
 
-function getSetting(string $key, ?string $fallback = null): string {
-    $fallback ??= '';
+function getSetting(string $key, string $fallback = ''): string {
     global $pdo;
     try {
         $stmt = $pdo->prepare('SELECT `value` FROM `settings` WHERE `key` = ? LIMIT 1');
@@ -110,8 +109,7 @@ function mediaUrl(string $fileType, string $filename): string {
     return $dir . $filename;
 }
 
-function mediaByCategory(string $category, ?string $fileType = null): array {
-    $fileType ??= 'image';
+function mediaByCategory(string $category, string $fileType = 'image'): array {
     global $pdo;
     try {
         $stmt = $pdo->prepare(
