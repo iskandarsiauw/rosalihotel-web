@@ -227,19 +227,24 @@ function Sidebar({tab, setTab, pageCount}) {
 }
 
 /* ── Overview ── */
-function TabOverview({pages}) {
+function TabOverview({pages, visibility}) {
   const [stats, setStats] = useState(null);
   useEffect(() => {
     fetch('api/overview.php').then(r => r.json()).then(setStats).catch(() => {});
   }, []);
 
-  const cards = stats ? [
-    {label:'Rooms',           value:stats.rooms,    color:T.accent},
-    {label:'Unread Messages', value:stats.messages, color:T.yellow},
-    {label:'Gallery Items',   value:stats.gallery,  color:T.green},
-    {label:'Events',          value:stats.events,   color:T.muted},
-  ] : [{label:'Rooms',value:'…',color:T.muted},{label:'Messages',value:'…',color:T.muted},
-       {label:'Gallery',value:'…',color:T.muted},{label:'Events',value:'…',color:T.muted}];
+  const visibleCount = pages.filter(p => visibility[p.id] !== false).length;
+  const hiddenCount  = pages.length - visibleCount;
+
+  const cards = [
+    {label:'Total Pages',     value: pages.length,        color:T.accent},
+    {label:'Visible in Nav',  value: visibleCount,        color:T.green},
+    {label:'Hidden Pages',    value: hiddenCount,         color:T.muted},
+    {label:'Media Files',     value: stats ? stats.gallery : '…', color:T.yellow},
+    {label:'Rooms',           value: stats ? stats.rooms : '…',    color:T.accent},
+    {label:'Unread Messages', value: stats ? stats.messages : '…', color:T.yellow},
+    {label:'Events',          value: stats ? stats.events : '…',   color:T.muted},
+  ];
 
   return (
     <div>
@@ -918,7 +923,7 @@ function App() {
     <div style={{display:'flex', minHeight:'100vh'}}>
       <Sidebar tab={tab} setTab={setTab} pageCount={pages.length}/>
       <main style={{flex:1, padding:'32px 36px', overflowY:'auto', maxHeight:'100vh', background:T.bg}}>
-        {tab === 'overview' && <TabOverview pages={pages}/>}
+        {tab === 'overview' && <TabOverview pages={pages} visibility={visibility}/>}
         {tab === 'pages'    && <TabPages pages={pages} visibility={visibility} setVisibility={setVisibility} setPages={setPages} savePages={savePages}/>}
         {tab === 'media'    && <TabMedia splatEnabled={splatEnabled}/>}
         {tab === 'colors'   && <TabColors activeTheme={activeTheme} setActiveTheme={setActiveTheme}/>}
