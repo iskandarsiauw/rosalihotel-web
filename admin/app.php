@@ -1126,7 +1126,7 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
 
   const refreshStats = () => fetch('api/settings-stats.php').then(r => r.json()).then(setStats).catch(() => {});
 
-  useEffect(refreshStats, []);
+  useEffect(() => { refreshStats(); }, []);
 
   const clearAll = async () => {
     if (confirmTxt !== 'RESET') { alert('Type RESET to confirm'); return; }
