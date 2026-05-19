@@ -6,7 +6,8 @@ function requireLogin(): void {
         session_start();
     }
     if (empty($_SESSION['admin_id'])) {
-        header('Location: ' . BASE_URL . 'admin/login.php');
+        $dir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+        header('Location: ' . $dir . '/index.php');
         exit;
     }
 }

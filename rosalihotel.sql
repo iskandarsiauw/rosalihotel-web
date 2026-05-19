@@ -97,3 +97,13 @@ CREATE TABLE IF NOT EXISTS `messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ─────────────────────────────────────────
+-- Seed: default admin user
+-- username : admin
+-- password : Admin@Rosali123  (bcrypt)
+-- ─────────────────────────────────────────
+INSERT IGNORE INTO `users` (`username`, `password`) VALUES (
+  'admin',
+  '$2y$10$opSidoUXgAoe9Gvl2MjwRuaLw6LrrZCW4j.OemPrCwrbBQc3RB7y6'
+);
