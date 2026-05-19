@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"D:\\\\xampp\\\\htdocs\\\\rosalihotel\" -Recurse -File)",
+      "Bash(Select-Object FullName, Extension)",
+      "Bash(Sort-Object FullName)",
+      "PowerShell($files = Get-ChildItem -Path \"D:\\\\xampp\\\\htdocs\\\\rosalihotel\" -Recurse -File; $files | Group-Object Extension | ForEach-Object { \"`n=== $\\($_.Name\\) Files ===\"; $_.Group | ForEach-Object { \"$\\($_.FullName\\) \\($\\($_.Length\\) bytes\\)\" } })",
+      "Bash(cp rooms.html rooms.php)",
+      "Bash(cp cafe.html cafe.php)",
+      "Bash(cp event.html events.php)",
+      "Bash(cp gallery.html gallery.php)",
+      "Bash(cp contact.html contact.php)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  }
+}

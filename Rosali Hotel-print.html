@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Rosali Hotel & Restaurant — Situbondo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+a{text-decoration:none;color:inherit}
+img{display:block;width:100%;height:100%;object-fit:cover}
+
+/* Rosa theme */
+:root{
+  --bg:#fdf5f3;--bg2:#f5e8e4;
+  --fg:#2a0d0a;--fg-muted:#6b3530;
+  --accent:#6b1a13;--accent-lt:#8f2c24;
+  --accent2:#2d5c2a;--border:#ddc4be;
+  --card:#ffffff;--nav-bg:#250907;--nav-fg:#f5ede9;
+  --font-d:'Playfair Display',Georgia,serif;
+  --font-b:'DM Sans',sans-serif;
+}
+
+body{
+  font-family:var(--font-b);
+  background:var(--bg);
+  color:var(--fg);
+  -webkit-print-color-adjust:exact;
+  print-color-adjust:exact;
+}
+
+/* ── PAGE SETUP ── */
+@page{ size:A4 portrait; margin:0; }
+@media print{
+  body{ background:var(--bg); }
+  .page{ page-break-after:always; break-after:page; }
+  .no-print{ display:none!important; }
+}
+
+/* ── SHARED ── */
+.label{
+  display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;
+}
+.label-line{ width:18px;height:1px;background:var(--accent);display:block; }
+.label-text{
+  font-family:var(--font-b);font-size:10px;font-weight:500;
+  letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);
+}
+.chip{
+  background:var(--bg2);color:var(--accent);border:1px solid var(--border);
+  padding:4px 11px;font-size:10px;letter-spacing:0.05em;border-radius:2px;
+  font-family:var(--font-b);font-weight:500;display:inline-block;
+}
+.placeholder{
+  background:var(--bg2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--fg-muted);font-size:11px;font-family:monospace;
+  text-align:center;padding:12px;
+}
+
+/* ── PAGE 1: COVER ── */
+.cover{
+  width:100%;height:100vh;
+  background:var(--nav-bg);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+  padding:60px;
+}
+.cover-pattern{
+  position:absolute;inset:0;opacity:0.06;
+  background-image:repeating-linear-gradient(45deg,var(--accent) 0,var(--accent) 1px,transparent 0,transparent 50%);
+  background-size:18px 18px;
+}
+.cover-accent-bar{
+  width:48px;height:2px;background:var(--accent-lt);margin:0 auto 28px;
+}
+.cover-logo{
+  font-family:var(--font-d);font-size:64px;font-weight:700;
+  color:#f5ede9;letter-spacing:0.14em;text-align:center;line-height:1;
+  margin-bottom:10px;
+}
+.cover-sub{
+  font-family:var(--font-b);font-size:13px;color:rgba(245,237,233,0.55);
+  letter-spacing:0.22em;text-transform:uppercase;text-align:center;margin-bottom:48px;
+}
+.cover-tagline{
+  font-family:var(--font-d);font-size:20px;font-style:italic;
+  color:rgba(245,237,233,0.75);text-align:center;margin-bottom:52px;
+  max-width:480px;line-height:1.55;
+}
+.cover-details{
+  display:flex;gap:48px;justify-content:center;flex-wrap:wrap;
+}
+.cover-detail{
+  text-align:center;
+}
+.cover-detail-val{
+  font-family:var(--font-d);font-size:22px;color:var(--accent-lt);font-weight:600;
+}
+.cover-detail-key{
+  font-family:var(--font-b);font-size:9px;letter-spacing:0.2em;
+  text-transform:uppercase;color:rgba(245,237,233,0.4);margin-top:4px;
+}
+.cover-footer{
+  position:absolute;bottom:32px;left:0;right:0;text-align:center;
+  font-family:var(--font-b);font-size:9px;letter-spacing:0.18em;
+  text-transform:uppercase;color:rgba(245,237,233,0.25);
+}
+
+/* ── PAGE 2: ABOUT ── */
+.page-inner{
+  width:100%;min-height:100vh;padding:64px 72px;
+  background:var(--bg);display:flex;flex-direction:column;justify-content:center;
+}
+.two-col{
+  display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;
+}
+.section-h2{
+  font-family:var(--font-d);font-size:34px;line-height:1.18;
+  color:var(--fg);margin-bottom:16px;
+}
+.section-p{
+  font-family:var(--font-b);font-size:13px;line-height:1.85;
+  color:var(--fg-muted);margin-bottom:22px;
+}
+
+/* ── PAGE 3: ROOMS ── */
+.rooms-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:3px;
+  margin-top:32px;
+}
+.room-card{
+  background:var(--card);border:1px solid var(--border);overflow:hidden;
+}
+.room-img{height:200px;}
+.room-body{padding:16px 14px;}
+.room-tag{
+  font-size:8px;letter-spacing:0.14em;text-transform:uppercase;
+  color:var(--accent);font-family:var(--font-b);font-weight:600;
+}
+.room-name{
+  font-family:var(--font-d);font-size:16px;color:var(--fg);margin:6px 0 6px;
+}
+.room-desc{
+  font-family:var(--font-b);font-size:11px;color:var(--fg-muted);line-height:1.6;
+}
+
+/* ── PAGE 4: CAFÉ + EVENTS ── */
+.half-page{
+  padding:48px 72px;background:var(--bg);flex:1;
+}
+.divider{height:1px;background:var(--border);margin:0 72px;}
+
+/* ── PAGE 5: CONTACT / FOOTER ── */
+.contact-page{
+  width:100%;min-height:100vh;
+  background:var(--nav-bg);
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:72px;text-align:center;
+}
+.contact-logo{
+  font-family:var(--font-d);font-size:40px;font-weight:700;
+  color:#f5ede9;letter-spacing:0.14em;margin-bottom:6px;
+}
+.contact-tagline{
+  font-family:var(--font-b);font-size:11px;color:rgba(245,237,233,0.4);
+  letter-spacing:0.2em;text-transform:uppercase;margin-bottom:52px;
+}
+.contact-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:40px;
+  max-width:700px;margin:0 auto 52px;
+}
+.contact-item-label{
+  font-family:var(--font-b);font-size:9px;letter-spacing:0.2em;
+  text-transform:uppercase;color:rgba(245,237,233,0.35);margin-bottom:8px;
+}
+.contact-item-val{
+  font-family:var(--font-d);font-size:15px;color:rgba(245,237,233,0.9);
+  line-height:1.5;
+}
+.wa-box{
+  border:1px solid rgba(245,237,233,0.15);padding:20px 40px;
+  display:inline-block;margin-bottom:52px;
+}
+.wa-label{
+  font-family:var(--font-b);font-size:9px;letter-spacing:0.2em;
+  text-transform:uppercase;color:rgba(245,237,233,0.4);margin-bottom:8px;
+}
+.wa-num{
+  font-family:var(--font-d);font-size:22px;color:#f5ede9;letter-spacing:0.06em;
+}
+.contact-footnote{
+  font-family:var(--font-b);font-size:9px;color:rgba(245,237,233,0.2);
+  letter-spacing:0.14em;text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1: COVER -->
+<div class="page cover">
+  <div class="cover-pattern"></div>
+  <div class="cover-accent-bar"></div>
+  <div class="cover-logo">ROSALI</div>
+  <div class="cover-sub">Hotel &amp; Restaurant · Situbondo, East Java</div>
+  <div class="cover-tagline">"A garden oasis in the heart of the city — where tropical beauty meets legendary Indonesian hospitality."</div>
+  <div class="cover-details">
+    <div class="cover-detail">
+      <div class="cover-detail-val">5</div>
+      <div class="cover-detail-key">Room Categories</div>
+    </div>
+    <div class="cover-detail">
+      <div class="cover-detail-val">Rosa De 5</div>
+      <div class="cover-detail-key">Garden Café</div>
+    </div>
+    <div class="cover-detail">
+      <div class="cover-detail-val">∞</div>
+      <div class="cover-detail-key">Garden Views</div>
+    </div>
+    <div class="cover-detail">
+      <div class="cover-detail-val">24h</div>
+      <div class="cover-detail-key">Reception</div>
+    </div>
+  </div>
+  <div class="cover-footer">rosalihotel.com · +62 878-5151-5500</div>
+</div>
+
+<!-- PAGE 2: ABOUT -->
+<div class="page page-inner">
+  <div class="two-col">
+    <div>
+      <div class="label"><span class="label-line"></span><span class="label-text">Our Story</span></div>
+      <h2 class="section-h2">A Garden Oasis<br/>in the City Center</h2>
+      <p class="section-p">Rosali Hotel is Situbondo's finest boutique hotel — wrapped in cascading tropical gardens, exotic flowers, and birdsong. In the heart of the city, yet a world away from the ordinary.</p>
+      <p class="section-p">Each corner of the property has been designed to bring guests closer to nature, with traditional architecture blending seamlessly into a lush tropical landscape.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;">
+        <span class="chip">24-Hour Reception</span>
+        <span class="chip">Tropical Gardens</span>
+        <span class="chip">Garden Café</span>
+        <span class="chip">Free Parking</span>
+        <span class="chip">Free WiFi</span>
+        <span class="chip">Breakfast Included</span>
+      </div>
+    </div>
+    <div class="placeholder" style="height:380px;border-radius:2px;">
+      [Photo: Garden Gazebo &amp; Tropical Flowers]
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3: ROOMS -->
+<div class="page page-inner">
+  <div class="label"><span class="label-line"></span><span class="label-text">Rooms &amp; Villas</span></div>
+  <h2 class="section-h2">Where You'll Stay</h2>
+  <p class="section-p" style="max-width:520px;">5 unique room categories across lush garden clusters — from signature teak villas to spacious family suites.</p>
+  <div class="rooms-grid">
+    <div class="room-card">
+      <div class="room-img placeholder">[Photo: Wooden House Villa]</div>
+      <div class="room-body">
+        <div class="room-tag">Signature</div>
+        <div class="room-name">The Wooden House</div>
+        <div class="room-desc">Iconic teak villa deep in the garden. Private veranda, garden views, authentic Javanese craftsmanship.</div>
+      </div>
+    </div>
+    <div class="room-card">
+      <div class="room-img placeholder">[Photo: The Orientals Room]</div>
+      <div class="room-body">
+        <div class="room-tag">Premium</div>
+        <div class="room-name">The Orientals</div>
+        <div class="room-desc">Antique furnishings &amp; garden views. A refined blend of Eastern elegance and modern comfort.</div>
+      </div>
+    </div>
+    <div class="room-card">
+      <div class="room-img placeholder">[Photo: VIP Suite]</div>
+      <div class="room-body">
+        <div class="room-tag">VIP</div>
+        <div class="room-name">The VIPs</div>
+        <div class="room-desc">Spacious suite, ideal for families. Extra living area, premium amenities, panoramic garden outlook.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 4: CAFÉ + EVENTS -->
+<div class="page" style="display:flex;flex-direction:column;min-height:100vh;background:var(--bg2);">
+  <div class="half-page" style="flex:1;display:flex;align-items:center;">
+    <div class="two-col">
+      <div>
+        <div class="label"><span class="label-line"></span><span class="label-text">Rosa De 5 Café</span></div>
+        <h2 class="section-h2" style="font-size:28px;">Specialty Coffee<br/>&amp; Garden Dining</h2>
+        <p class="section-p">A café within the hotel garden. Slow bar coffee, artisan food, and a relaxed open-air atmosphere — open late into the night.</p>
+        <p style="font-family:var(--font-b);font-size:11px;color:var(--accent);letter-spacing:0.06em;">Sun–Thu 09:00–23:00 · Fri–Sat 09:00–24:00</p>
+      </div>
+      <div class="placeholder" style="height:260px;border-radius:2px;">[Photo: Rosa De 5 Café Interior]</div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="half-page" style="flex:1;display:flex;align-items:center;">
+    <div class="two-col">
+      <div class="placeholder" style="height:260px;border-radius:2px;">[Photo: Wedding Garden / Event Setup]</div>
+      <div>
+        <div class="label"><span class="label-line"></span><span class="label-text">Events</span></div>
+        <h2 class="section-h2" style="font-size:28px;">Host Your Event<br/>With Us</h2>
+        <p class="section-p">From corporate meetings to dream weddings — beautifully hosted in our tropical garden venues.</p>
+        <p style="font-family:var(--font-b);font-size:11px;color:var(--accent);letter-spacing:0.06em;">Meetings · Weddings · Birthdays · Celebrations</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5: CONTACT -->
+<div class="page contact-page">
+  <div class="contact-logo">ROSALI</div>
+  <div class="contact-tagline">Hotel &amp; Restaurant · Situbondo, East Java, Indonesia</div>
+
+  <div class="wa-box">
+    <div class="wa-label">Book &amp; Inquiries via WhatsApp</div>
+    <div class="wa-num">+62 878-5151-5500</div>
+  </div>
+
+  <div class="contact-grid">
+    <div>
+      <div class="contact-item-label">Address</div>
+      <div class="contact-item-val">Jl. PB Sudirman,<br/>Situbondo 68312<br/>Jawa Timur</div>
+    </div>
+    <div>
+      <div class="contact-item-label">Nearby Attractions</div>
+      <div class="contact-item-val">Pasir Putih Beach<br/>Kawah Ijen<br/>Baluran National Park</div>
+    </div>
+    <div>
+      <div class="contact-item-label">Check-in / Out</div>
+      <div class="contact-item-val">Check-in: 14:00<br/>Check-out: 12:00<br/>Reception: 24 hours</div>
+    </div>
+  </div>
+
+  <div class="contact-footnote">© 2025 Rosali Hotel &amp; Restaurant · All Rights Reserved</div>
+</div>
+
+<script>
+  document.fonts.ready.then(function(){
+    setTimeout(function(){ window.print(); }, 600);
+  });
+</script>
+</body>
+</html>
