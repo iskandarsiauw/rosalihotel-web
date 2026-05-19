@@ -22,7 +22,7 @@ $lang  = getActiveLang();
 <script type="text/babel" src="shared.jsx"></script>
 <script type="text/babel">
 const { useState, useEffect } = React;
-const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme } = window;
+const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme, RC } = window;
 
 const PROMOS = {
   en:[
@@ -57,7 +57,13 @@ function App(){
   initRosali(theme,lang);
   useEffect(()=>{ localStorage.setItem('rosali_lang',lang); },[lang]);
   const en=lang==='en';
-  const promos=PROMOS[lang];
+  const promos = PROMOS[lang].map((p,i)=>({
+    ...p,
+    title: RC('promo'+(i+1)+'_title_'+lang, p.title),
+    badge: RC('promo'+(i+1)+'_badge_'+lang, p.badge),
+    desc:  RC('promo'+(i+1)+'_desc_'+lang,  p.desc),
+    cta:   RC('promo'+(i+1)+'_cta_'+lang,   p.cta),
+  }));
 
   const sendWa=()=>{
     const types={stay:en?'Room Booking':'Pemesanan Kamar',
@@ -83,10 +89,10 @@ function App(){
       {/* Header */}
       <div style={{paddingTop:120,paddingBottom:60,textAlign:'center',
         padding:'120px clamp(20px,6vw,96px) 60px',background:'var(--bg)'}}>
-        <RosaliLabel>{en?'Contact & Promo':'Kontak & Promo'}</RosaliLabel>
+        <RosaliLabel>{RC('contact_hero_sup_'+lang, en?'Contact & Promo':'Kontak & Promo')}</RosaliLabel>
         <h1 style={{fontFamily:'var(--font-d)',fontSize:'clamp(32px,5vw,64px)',
           lineHeight:1.05,color:'var(--fg)',whiteSpace:'pre-line'}}>
-          {en?'Find Us.\nBook Us.\nStay With Us.':'Temukan Kami.\nPesan.\nMenginaplah.'}
+          {RC('contact_hero_title_'+lang, en?'Find Us.\nBook Us.\nStay With Us.':'Temukan Kami.\nPesan.\nMenginaplah.')}
         </h1>
       </div>
 

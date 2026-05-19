@@ -120,13 +120,13 @@ function App(){
           background:'linear-gradient(to top,oklch(9% 0.04 150/0.88) 0%,oklch(9% 0.04 150/0.22) 55%,transparent 100%)'}}/>
         <div style={{position:'relative',zIndex:2,maxWidth:820}}>
           <p style={{fontFamily:'var(--font-b)',fontSize:12,letterSpacing:'0.22em',
-            textTransform:'uppercase',color:'oklch(80% 0.1 80)',marginBottom:18}}>{c.hero.sup}</p>
+            textTransform:'uppercase',color:'oklch(80% 0.1 80)',marginBottom:18}}>{RC('hero_sup_'+lang, c.hero.sup)}</p>
           <h1 style={{fontFamily:'var(--font-d)',fontSize:'clamp(48px,8vw,100px)',
             lineHeight:1.02,color:'oklch(97% 0.01 100)',fontWeight:700,
-            whiteSpace:'pre-line',marginBottom:22}}>{c.hero.title}</h1>
+            whiteSpace:'pre-line',marginBottom:22}}>{RC('hero_title_'+lang, c.hero.title)}</h1>
           <p style={{fontFamily:'var(--font-b)',fontSize:16,color:'oklch(90% 0.015 100)',
-            maxWidth:440,lineHeight:1.75,marginBottom:38,opacity:.9}}>{c.hero.sub}</p>
-          <RosaliBtn text={c.hero.cta} style={{fontSize:14,padding:'15px 30px'}}/>
+            maxWidth:440,lineHeight:1.75,marginBottom:38,opacity:.9}}>{RC('hero_sub_'+lang, c.hero.sub)}</p>
+          <RosaliBtn text={RC('hero_cta_'+lang, c.hero.cta)} style={{fontSize:14,padding:'15px 30px'}}/>
         </div>
       </section>
 
@@ -135,13 +135,13 @@ function App(){
         display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:'clamp(36px,6vw,80px)',
         alignItems:'center',background:'var(--bg)'}}>
         <div>
-          <RosaliLabel>{c.about.label}</RosaliLabel>
+          <RosaliLabel>{RC('about_label_'+lang, c.about.label)}</RosaliLabel>
           <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(26px,3.5vw,44px)',
-            lineHeight:1.18,marginBottom:18,color:'var(--fg)'}}>{c.about.title}</h2>
+            lineHeight:1.18,marginBottom:18,color:'var(--fg)'}}>{RC('about_title_'+lang, c.about.title)}</h2>
           <p style={{fontFamily:'var(--font-b)',fontSize:15,lineHeight:1.85,
-            color:'var(--fg-muted)',marginBottom:28}}>{c.about.body}</p>
+            color:'var(--fg-muted)',marginBottom:28}}>{RC('about_body_'+lang, c.about.body)}</p>
           <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-            {c.about.chips.map(h=>(
+            {(RC('about_chips_'+lang,'')?RC('about_chips_'+lang,'').split(',').map(s=>s.trim()).filter(Boolean):c.about.chips).map(h=>(
               <span key={h} style={{background:'var(--bg2)',color:'var(--accent)',
                 border:'1px solid var(--border)',padding:'5px 12px',fontSize:11,
                 letterSpacing:'0.05em',borderRadius:2,fontFamily:'var(--font-b)',fontWeight:500}}>{h}</span>
@@ -155,32 +155,37 @@ function App(){
       <section style={{background:'var(--bg2)',padding:'clamp(56px,8vw,104px) clamp(20px,6vw,96px)'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:44,flexWrap:'wrap',gap:12}}>
           <div>
-            <RosaliLabel>{c.rooms.label}</RosaliLabel>
-            <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(26px,3.5vw,44px)',color:'var(--fg)'}}>{c.rooms.title}</h2>
+            <RosaliLabel>{RC('home_rooms_label_'+lang, c.rooms.label)}</RosaliLabel>
+            <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(26px,3.5vw,44px)',color:'var(--fg)'}}>{RC('home_rooms_title_'+lang, c.rooms.title)}</h2>
           </div>
           <a href="rooms.php" style={{fontFamily:'var(--font-b)',fontSize:13,color:'var(--accent)',
             letterSpacing:'0.05em',fontWeight:500,borderBottom:'1px solid var(--accent)',paddingBottom:2,
             transition:'opacity .2s'}}
             onMouseEnter={e=>e.currentTarget.style.opacity='.7'}
             onMouseLeave={e=>e.currentTarget.style.opacity='1'}
-          >{c.rooms.cta} →</a>
+          >{RC('home_rooms_cta_'+lang, c.rooms.cta)} →</a>
         </div>
         <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':isTablet?'repeat(2,1fr)':`repeat(${roomsCols},1fr)`,gap:3}}>
-          {c.rooms.list.map((r,i)=>(
-            <a key={i} href="rooms.php" style={{background:'var(--card)',borderRadius:2,
+          {[['wooden','Signature'],['oriental','Premium'],['vip','VIP']].map(([rk,rtag],i)=>{
+            const r = c.rooms.list[i];
+            const rName = RC('room_'+rk+'_name_'+lang, r.name);
+            const rDesc = RC('room_'+rk+'_desc_'+lang, r.desc);
+            return (
+            <a key={rk} href="rooms.php" style={{background:'var(--card)',borderRadius:2,
               overflow:'hidden',display:'block',transition:'transform .25s'}}
               onMouseEnter={e=>e.currentTarget.style.transform='translateY(-4px)'}
               onMouseLeave={e=>e.currentTarget.style.transform='none'}
             >
-              <RosaliImg label={`room — ${r.name.toLowerCase()} interior`} h={220}/>
+              <RosaliImg label={`room — ${rk} interior`} h={220}/>
               <div style={{padding:'18px 16px'}}>
                 <span style={{fontSize:9,letterSpacing:'0.14em',textTransform:'uppercase',
-                  color:'var(--accent)',fontFamily:'var(--font-b)',fontWeight:600}}>{r.tag}</span>
-                <h4 style={{fontFamily:'var(--font-d)',fontSize:18,color:'var(--fg)',margin:'6px 0 8px'}}>{r.name}</h4>
-                <p style={{fontFamily:'var(--font-b)',fontSize:12,color:'var(--fg-muted)',lineHeight:1.6}}>{r.desc}</p>
+                  color:'var(--accent)',fontFamily:'var(--font-b)',fontWeight:600}}>{rtag}</span>
+                <h4 style={{fontFamily:'var(--font-d)',fontSize:18,color:'var(--fg)',margin:'6px 0 8px'}}>{rName}</h4>
+                <p style={{fontFamily:'var(--font-b)',fontSize:12,color:'var(--fg-muted)',lineHeight:1.6}}>{rDesc}</p>
               </div>
             </a>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -188,16 +193,16 @@ function App(){
       <section style={{background:'var(--bg)',padding:'clamp(56px,8vw,104px) clamp(20px,6vw,96px)',
         display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:'clamp(36px,6vw,80px)',alignItems:'center'}}>
         <div>
-          <RosaliLabel>{c.cafe.label}</RosaliLabel>
+          <RosaliLabel>{RC('home_cafe_label_'+lang, c.cafe.label)}</RosaliLabel>
           <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(26px,3.5vw,44px)',
-            lineHeight:1.15,color:'var(--fg)',marginBottom:16,whiteSpace:'pre-line'}}>{c.cafe.title}</h2>
-          <p style={{fontFamily:'var(--font-b)',fontSize:15,color:'var(--fg-muted)',lineHeight:1.8,marginBottom:14}}>{c.cafe.sub}</p>
+            lineHeight:1.15,color:'var(--fg)',marginBottom:16,whiteSpace:'pre-line'}}>{RC('home_cafe_title_'+lang, c.cafe.title)}</h2>
+          <p style={{fontFamily:'var(--font-b)',fontSize:15,color:'var(--fg-muted)',lineHeight:1.8,marginBottom:14}}>{RC('home_cafe_sub_'+lang, c.cafe.sub)}</p>
           <p style={{fontFamily:'var(--font-b)',fontSize:12,color:'var(--accent)',
-            letterSpacing:'0.06em',marginBottom:28}}>{c.cafe.hours}</p>
+            letterSpacing:'0.06em',marginBottom:28}}>{RC('cafe_hours_'+lang, c.cafe.hours)}</p>
           <a href="cafe.php" style={{display:'inline-flex',alignItems:'center',gap:6,
             fontFamily:'var(--font-b)',fontSize:13,color:'var(--accent)',fontWeight:500,
             borderBottom:'1px solid var(--accent)',paddingBottom:2}}>
-            {c.cafe.cta} →
+            {RC('home_cafe_cta_'+lang, c.cafe.cta)} →
           </a>
         </div>
         <RosaliImg label="cafe — Rosa De 5 interior / specialty coffee / slow bar" h={400} style={{borderRadius:2}}/>
@@ -208,27 +213,27 @@ function App(){
         display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:'clamp(36px,6vw,80px)',alignItems:'center'}}>
         <RosaliImg label="events — wedding garden / jasmine meeting room setup" h={400} style={{borderRadius:2}}/>
         <div>
-          <RosaliLabel>{c.events.label}</RosaliLabel>
+          <RosaliLabel>{RC('home_events_label_'+lang, c.events.label)}</RosaliLabel>
           <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(26px,3.5vw,44px)',
-            lineHeight:1.15,color:'var(--fg)',marginBottom:16,whiteSpace:'pre-line'}}>{c.events.title}</h2>
-          <p style={{fontFamily:'var(--font-b)',fontSize:15,color:'var(--fg-muted)',lineHeight:1.8,marginBottom:28}}>{c.events.sub}</p>
+            lineHeight:1.15,color:'var(--fg)',marginBottom:16,whiteSpace:'pre-line'}}>{RC('home_events_title_'+lang, c.events.title)}</h2>
+          <p style={{fontFamily:'var(--font-b)',fontSize:15,color:'var(--fg-muted)',lineHeight:1.8,marginBottom:28}}>{RC('home_events_sub_'+lang, c.events.sub)}</p>
           <a href="events.php" style={{display:'inline-flex',alignItems:'center',gap:6,
             fontFamily:'var(--font-b)',fontSize:13,color:'var(--accent)',fontWeight:500,
             borderBottom:'1px solid var(--accent)',paddingBottom:2}}>
-            {c.events.cta} →
+            {RC('home_events_cta_'+lang, c.events.cta)} →
           </a>
         </div>
       </section>
 
       {/* TOURISM STRIP */}
       <section style={{background:'var(--bg)',padding:'clamp(56px,8vw,104px) clamp(20px,6vw,96px)',textAlign:'center'}}>
-        <RosaliLabel>{c.tourism.label}</RosaliLabel>
-        <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(26px,3.5vw,44px)',color:'var(--fg)',marginBottom:12}}>{c.tourism.title}</h2>
-        <p style={{fontFamily:'var(--font-b)',fontSize:14,color:'var(--fg-muted)',marginBottom:28,lineHeight:1.6}}>{c.tourism.sub}</p>
+        <RosaliLabel>{RC('home_tourism_label_'+lang, c.tourism.label)}</RosaliLabel>
+        <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(26px,3.5vw,44px)',color:'var(--fg)',marginBottom:12}}>{RC('home_tourism_title_'+lang, c.tourism.title)}</h2>
+        <p style={{fontFamily:'var(--font-b)',fontSize:14,color:'var(--fg-muted)',marginBottom:28,lineHeight:1.6}}>{RC('home_tourism_sub_'+lang, c.tourism.sub)}</p>
         <a href="tourism.php" style={{display:'inline-flex',alignItems:'center',gap:6,margin:'0 auto',
           fontFamily:'var(--font-b)',fontSize:13,color:'var(--accent)',fontWeight:500,
           borderBottom:'1px solid var(--accent)',paddingBottom:2}}>
-          {c.tourism.cta} →
+          {RC('home_tourism_cta_'+lang, c.tourism.cta)} →
         </a>
       </section>
 

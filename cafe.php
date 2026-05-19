@@ -22,7 +22,7 @@ $lang  = getActiveLang();
 <script type="text/babel" src="shared.jsx"></script>
 <script type="text/babel">
 const { useState, useEffect } = React;
-const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme } = window;
+const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme, RC } = window;
 
 const MENU = {
   en: [
@@ -77,7 +77,11 @@ function App(){
   initRosali(theme,lang);
   useEffect(()=>{ localStorage.setItem('rosali_lang',lang); },[lang]);
   const en=lang==='en';
-  const menu=MENU[lang];
+  const CAT_KEYS = ['cat1','cat2','cat3'];
+  const menu = MENU[lang].map((m,i)=>({
+    ...m,
+    cat: RC('cafe_'+CAT_KEYS[i]+'_name_'+lang, m.cat),
+  }));
 
   return(
     <div className={`theme-${theme}`} style={{minHeight:'100vh'}}>
@@ -93,25 +97,25 @@ function App(){
         <div style={{position:'relative',zIndex:2,maxWidth:700}}>
           <p style={{fontFamily:'var(--font-b)',fontSize:11,letterSpacing:'0.24em',
             textTransform:'uppercase',color:'oklch(72% 0.15 76)',marginBottom:16}}>
-            {en?'Within Rosali Hotel · Situbondo':'Di Dalam Rosali Hotel · Situbondo'}
+            {RC('cafe_hero_sup_'+lang, en?'Within Rosali Hotel · Situbondo':'Di Dalam Rosali Hotel · Situbondo')}
           </p>
           <h1 style={{fontFamily:'var(--font-d)',fontSize:'clamp(44px,7vw,90px)',
             lineHeight:1.02,color:'oklch(97% 0.01 100)',fontWeight:700,marginBottom:20}}>
-            Rosa De 5<br/><em style={{fontStyle:'italic',fontWeight:400}}>Café</em>
+            {RC('cafe_hero_title_'+lang,'') || (<>Rosa De 5<br/><em style={{fontStyle:'italic',fontWeight:400}}>Café</em></>)}
           </h1>
           <p style={{fontFamily:'var(--font-b)',fontSize:16,color:'oklch(88% 0.015 100)',
             maxWidth:420,lineHeight:1.75,marginBottom:16,opacity:.9}}>
-            {en?'Specialty coffee · Slow bar · Garden ambiance · Open late'
-              :'Kopi specialty · Slow bar · Suasana taman · Buka hingga malam'}
+            {RC('cafe_hero_sub_'+lang, en?'Specialty coffee · Slow bar · Garden ambiance · Open late'
+              :'Kopi specialty · Slow bar · Suasana taman · Buka hingga malam')}
           </p>
           <p style={{fontFamily:'var(--font-b)',fontSize:13,color:'oklch(72% 0.15 76)',
             letterSpacing:'0.06em',marginBottom:36}}>
-            {en?'Sun–Thu 09:00–23:00  ·  Fri–Sat 09:00–24:00'
-              :'Min–Kam 09:00–23:00  ·  Jum–Sab 09:00–24:00'}
+            {RC('cafe_hours_'+lang, en?'Sun–Thu 09:00–23:00  ·  Fri–Sat 09:00–24:00'
+              :'Min–Kam 09:00–23:00  ·  Jum–Sab 09:00–24:00')}
           </p>
           <div style={{display:'flex',gap:14,flexWrap:'wrap'}}>
             <RosaliBtn
-              text={en?'Reserve a Table':'Reservasi Meja'}
+              text={RC('cafe_page_cta_'+lang, en?'Reserve a Table':'Reservasi Meja')}
               href="https://wa.me/6285956799123"
               style={{fontSize:14,padding:'14px 28px',background:'oklch(72% 0.15 76)',color:'oklch(10% 0.02 60)'}}
             />
