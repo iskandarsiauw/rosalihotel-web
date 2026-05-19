@@ -24,7 +24,7 @@ if ($user && password_verify($password, $user['password'])) {
     session_regenerate_id(true);
     $_SESSION['admin_id']       = $user['id'];
     $_SESSION['admin_username'] = $user['username'];
-    header('Location: dashboard.php');
+    header('Location: app.php');
     exit;
 }
 

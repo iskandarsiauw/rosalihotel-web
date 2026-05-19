@@ -3,7 +3,7 @@ require_once '../includes/db.php';
 require_once '../includes/functions.php';
 session_start();
 if (!empty($_SESSION['admin_id'])) {
-    header('Location: dashboard.php');
+    header('Location: app.php');
     exit;
 }
 $error = isset($_GET['error']) ? (int)$_GET['error'] : 0;

@@ -11,7 +11,11 @@
       "Bash(cp gallery.html gallery.php)",
       "Bash(cp contact.html contact.php)",
       "Bash(git init *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -r \"echo password_hash\\('Admin@Rosali123', PASSWORD_BCRYPT\\);\")",
+      "Bash(git push *)",
+      "Bash(curl -s \"http://localhost:8088/rosalihotel/\")"
     ]
   }
 }
