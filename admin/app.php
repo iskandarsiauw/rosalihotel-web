@@ -1,7 +1,9 @@
 <?php
 require_once '../includes/auth.php';
+require_once '../includes/functions.php';
 requireLogin();
-$adminUser = htmlspecialchars($_SESSION['admin_username'] ?? 'Admin');
+$adminUser  = htmlspecialchars($_SESSION['admin_username'] ?? 'Admin');
+$csrfToken  = csrfToken();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -13,7 +15,8 @@ $adminUser = htmlspecialchars($_SESSION['admin_username'] ?? 'Admin');
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<!-- shared.jsx loaded only so initRosali can inject THEME_CSS for the Colors tab -->
+<!-- Admin uses fixed dark theme. shared.jsx is loaded only so its THEME_CSS block can be probed by the Colors tab. -->
+<script>window.ROSALI = { theme:'rosa', lang:'en', images:{}, content:{}, layout:{}, colors:{}, pageVisibility:{}, splatEnabled:false };</script>
 <script type="text/babel" src="../shared.jsx"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -32,9 +35,9 @@ input[type=color]{padding:0;border:none;cursor:pointer;border-radius:4px;overflo
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
-const ADMIN_USER = <?= json_encode($adminUser) ?>;
+const ADMIN_USER  = <?= json_encode($adminUser) ?>;
+const CSRF_TOKEN  = <?= json_encode($csrfToken) ?>;
 
-/* ── Design tokens (dark admin theme, fixed — never inherits front-end theme) ── */
 const T = {
   bg:'oklch(14% 0.018 250)', bg2:'oklch(18% 0.020 250)', bg3:'oklch(22% 0.022 250)',
   border:'oklch(30% 0.022 250)', fg:'oklch(92% 0.010 240)', muted:'oklch(58% 0.015 240)',
@@ -54,7 +57,7 @@ async function apiSet(key, value) {
   try {
     await fetch('api/data.php', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: {'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN},
       body: JSON.stringify({key, value}),
     });
   } catch {}
@@ -62,26 +65,22 @@ async function apiSet(key, value) {
 
 /* ── Static data ── */
 const DEFAULT_PAGES = [
-  {id:'home',    label:'Home',           file:'../index.php',   visible:true, order:1},
-  {id:'rooms',   label:'Rooms',          file:'../rooms.php',   visible:true, order:2},
-  {id:'events',  label:'Events',         file:'../events.php',  visible:true, order:3},
-  {id:'cafe',    label:'Rosa De 5 Café', file:'../cafe.php',    visible:true, order:4},
-  {id:'gallery', label:'Gallery',        file:'../gallery.php', visible:true, order:5},
-  {id:'tourism', label:'Tourism',        file:'../tourism.php', visible:true, order:6},
-  {id:'contact', label:'Contact',        file:'../contact.php', visible:true, order:7},
+  {id:'home',    label:'Home',           file:'../index.php',   order:1},
+  {id:'rooms',   label:'Rooms',          file:'../rooms.php',   order:2},
+  {id:'events',  label:'Events',         file:'../events.php',  order:3},
+  {id:'cafe',    label:'Rosa De 5 Café', file:'../cafe.php',    order:4},
+  {id:'gallery', label:'Gallery',        file:'../gallery.php', order:5},
+  {id:'tourism', label:'Tourism',        file:'../tourism.php', order:6},
+  {id:'contact', label:'Contact',        file:'../contact.php', order:7},
 ];
 
-const IMAGE_SLOTS = [
-  {key:'hero___garden_entrance',   page:'Home',    label:'Hero — Garden Entrance / Aerial'},
-  {key:'about___gazebo',           page:'Home',    label:'About — Gazebo / Tropical Flowers'},
-  {key:'room___wooden_house',      page:'Rooms',   label:'Room — The Wooden House'},
-  {key:'room___orientals',         page:'Rooms',   label:'Room — The Orientals'},
-  {key:'room___vips',              page:'Rooms',   label:'Room — The VIPs'},
-  {key:'cafe___interior',          page:'Café',    label:'Café — Interior / Slow Bar'},
-  {key:'events___wedding',         page:'Events',  label:'Events — Wedding / Meeting Room'},
-  {key:'tourism___pasir_putih',    page:'Tourism', label:'Tourism — Pasir Putih / Ijen'},
-  {key:'gallery___exterior',       page:'Gallery', label:'Gallery — Hotel Exterior'},
-  {key:'contact___front_desk',     page:'Contact', label:'Contact — Front Desk'},
+const MEDIA_CATEGORIES = [
+  {id:'general',   label:'General'},
+  {id:'rooms',     label:'Rooms'},
+  {id:'gallery',   label:'Gallery'},
+  {id:'events',    label:'Events'},
+  {id:'cafe',      label:'Café'},
+  {id:'room_tour', label:'Room Tour (3D)'},
 ];
 
 const THEME_VARS = [
@@ -100,6 +99,17 @@ const THEMES       = ['garden','boutique','javanese','rosa','coastal','batik'];
 const THEME_LABELS = {garden:'🌿 Garden',boutique:'🏛 Boutique',javanese:'✨ Javanese',rosa:'🌹 Rosa',coastal:'🌊 Coastal',batik:'🔷 Batik'};
 
 const CONTENT_FIELDS = [
+  {id:'general', label:'General', fields:[
+    {key:'hotel_name',    label:'Hotel Name',         hint:'Shown in nav & page title'},
+    {key:'wa_number',     label:'WhatsApp Number',    hint:'e.g. 6287851515500 — no + or spaces'},
+    {key:'phone',         label:'Phone',              hint:'Front-desk reception number'},
+    {key:'email',         label:'Email'},
+    {key:'address',       label:'Address',            multi:true},
+    {key:'instagram',     label:'Instagram Handle',   hint:'Without @'},
+    {key:'facebook_url',  label:'Facebook URL'},
+    {key:'cafe_hours_en', label:'Café Hours (EN)',    hint:'e.g. Sun–Thu 09:00–23:00 · Fri–Sat 09:00–24:00'},
+    {key:'cafe_hours_id', label:'Café Hours (ID)'},
+  ]},
   {id:'home', label:'Home', fields:[
     {key:'hero_title_en', label:'Hero Title (EN)',    multi:true, hint:'Use \\n for line breaks'},
     {key:'hero_title_id', label:'Hero Title (ID)',    multi:true},
@@ -110,36 +120,27 @@ const CONTENT_FIELDS = [
     {key:'about_body_en', label:'About Body (EN)',    multi:true},
     {key:'about_body_id', label:'About Body (ID)',    multi:true},
   ]},
-  {id:'general', label:'General', fields:[
-    {key:'hotel_name',    label:'Hotel Name',         hint:'Shown in nav & page title'},
-    {key:'wa_number',     label:'WhatsApp Number',    hint:'e.g. 6287851515500 — no + or spaces'},
-    {key:'address',       label:'Address',            multi:true},
-    {key:'cafe_hours_en', label:'Café Hours (EN)',    hint:'e.g. Sun–Thu 09:00–23:00 · Fri–Sat 09:00–24:00'},
-    {key:'cafe_hours_id', label:'Café Hours (ID)'},
-    {key:'instagram',     label:'Instagram Handle',   hint:'Without @'},
-    {key:'email',         label:'Email'},
-  ]},
 ];
 
 const LAYOUT_SECTIONS = [
-  {key:'home_about_flip',  label:'About Section',  options:['Image Right (default)','Image Left'], values:['normal','flip']},
-  {key:'home_cafe_flip',   label:'Café Section',   options:['Text Left (default)','Text Right'],   values:['normal','flip']},
-  {key:'home_events_flip', label:'Events Section', options:['Image Left (default)','Image Right'], values:['normal','flip']},
-  {key:'home_rooms_cols',  label:'Rooms Grid',     options:['3 Columns (default)','2 Columns'],    values:['3','2']},
+  {key:'home_about_flip',  label:'Home — About Section',  options:['Image Right (default)','Image Left'], values:['normal','flip']},
+  {key:'home_cafe_flip',   label:'Home — Café Section',   options:['Text Left (default)','Text Right'],   values:['normal','flip']},
+  {key:'home_events_flip', label:'Home — Events Section', options:['Image Left (default)','Image Right'], values:['normal','flip']},
+  {key:'home_rooms_cols',  label:'Home — Rooms Grid',     options:['3 Columns (default)','2 Columns'],    values:['3','2']},
 ];
 
-const IS = { /* input style */
+const IS = {
   width:'100%', background:'oklch(12% 0.015 250)', border:'1px solid oklch(32% 0.022 250)',
   borderRadius:5, padding:'9px 12px', color:T.fg, fontSize:13, outline:'none',
 };
 
 /* ── Shared components ── */
-function Btn({children, onClick, small, secondary, danger, disabled}) {
+function Btn({children, onClick, small, secondary, danger, disabled, type}) {
   const bg     = danger ? T.red : secondary ? 'transparent' : T.accent;
   const border = (secondary || danger) ? `1px solid ${danger ? T.red : T.border}` : 'none';
   const color  = secondary ? T.muted : 'white';
   return (
-    <button onClick={onClick} disabled={disabled} style={{
+    <button onClick={onClick} disabled={disabled} type={type||'button'} style={{
       background:bg, border, color,
       padding: small ? '5px 10px' : '9px 16px',
       borderRadius:5, fontSize: small ? 11 : 13, fontWeight:500,
@@ -261,7 +262,7 @@ function TabOverview({pages}) {
       <h3 style={{fontSize:13, fontWeight:600, color:T.fg, marginBottom:12,
         letterSpacing:'0.06em', textTransform:'uppercase'}}>Quick Links</h3>
       <div style={{display:'flex', flexWrap:'wrap', gap:8}}>
-        {pages.slice(0,7).map(p => (
+        {pages.map(p => (
           <a key={p.id} href={p.file} target="_blank"
             style={{padding:'8px 14px', border:`1px solid ${T.border}`,
               borderRadius:6, fontSize:12, color:T.muted, transition:'all .15s'}}
@@ -275,236 +276,57 @@ function TabOverview({pages}) {
 }
 
 /* ── Pages ── */
-function TabPages({pages, setPages, savePages}) {
-  const [editing,  setEditing]  = useState(null);
-  const [showAdd,  setShowAdd]  = useState(false);
-  const [newPage,  setNewPage]  = useState({label:'', file:'', visible:true});
-  const [drag,     setDrag]     = useState(null);
+function TabPages({pages, visibility, setVisibility, setPages, savePages}) {
+  const [drag, setDrag] = useState(null);
 
   const toggle = id => {
-    const u = pages.map(p => p.id === id ? {...p, visible:!p.visible} : p);
-    setPages(u); savePages(u);
-  };
-  const remove = id => {
-    if (!confirm('Remove page from navigation?')) return;
-    const u = pages.filter(p => p.id !== id);
-    setPages(u); savePages(u);
-  };
-  const save = (id, label, file) => {
-    const u = pages.map(p => p.id === id ? {...p, label, file} : p);
-    setPages(u); savePages(u); setEditing(null);
+    const u = {...visibility, [id]: !visibility[id]};
+    setVisibility(u);
+    apiSet('page_visibility', JSON.stringify(u));
   };
   const dragOver = (e, id) => {
     e.preventDefault();
     if (drag === id) return;
     const from = pages.findIndex(p => p.id === drag);
     const to   = pages.findIndex(p => p.id === id);
+    if (from === -1 || to === -1) return;
     const arr  = [...pages];
     arr.splice(to, 0, arr.splice(from, 1)[0]);
     setPages(arr); savePages(arr);
   };
-  const addPage = () => {
-    if (!newPage.label || !newPage.file) { alert('Fill in label and filename'); return; }
-    const u = [...pages, {id: Date.now().toString(), label:newPage.label,
-      file:newPage.file, visible:newPage.visible, order:pages.length + 1}];
-    setPages(u); savePages(u);
-    setShowAdd(false); setNewPage({label:'', file:'', visible:true});
-  };
 
   return (
     <div>
-      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:24}}>
-        <div>
-          <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Pages</h2>
-          <p style={{color:T.muted, fontSize:13}}>Drag to reorder · toggle visibility · add new pages.</p>
-        </div>
-        <Btn onClick={() => setShowAdd(s => !s)}>+ Add Page</Btn>
+      <div style={{marginBottom:24}}>
+        <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Pages</h2>
+        <p style={{color:T.muted, fontSize:13}}>Drag to reorder · toggle visibility to show/hide from navigation. Hidden pages still exist but disappear from the front-end menu.</p>
       </div>
-
-      {showAdd && (
-        <div style={{background:T.bg2, border:`1px solid ${T.border}`,
-          borderRadius:8, padding:20, marginBottom:20}}>
-          <div style={{fontSize:14, fontWeight:600, color:T.fg, marginBottom:16}}>New Page</div>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12}}>
-            <div>
-              <label style={{fontSize:11, color:T.muted, display:'block', marginBottom:4}}>Page Name</label>
-              <input value={newPage.label} onChange={e => setNewPage(p => ({...p, label:e.target.value}))}
-                placeholder="e.g. Spa" style={IS}/>
-            </div>
-            <div>
-              <label style={{fontSize:11, color:T.muted, display:'block', marginBottom:4}}>PHP Filename (relative)</label>
-              <input value={newPage.file} onChange={e => setNewPage(p => ({...p, file:e.target.value}))}
-                placeholder="e.g. ../spa.php" style={IS}/>
-            </div>
-          </div>
-          <label style={{display:'flex', alignItems:'center', gap:7,
-            fontSize:13, color:T.muted, cursor:'pointer', marginBottom:14}}>
-            <input type="checkbox" checked={newPage.visible}
-              onChange={e => setNewPage(p => ({...p, visible:e.target.checked}))}/>
-            Show in navigation
-          </label>
-          <div style={{display:'flex', gap:8}}>
-            <Btn onClick={addPage}>Add Page</Btn>
-            <Btn onClick={() => setShowAdd(false)} secondary>Cancel</Btn>
-          </div>
-        </div>
-      )}
 
       <div style={{display:'flex', flexDirection:'column', gap:3}}>
-        {pages.map((p, i) => (
-          <div key={p.id} draggable
-            onDragStart={() => setDrag(p.id)}
-            onDragOver={e => dragOver(e, p.id)}
-            style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:7,
-              padding:'12px 15px', display:'flex', alignItems:'center', gap:11,
-              cursor:'grab', transition:'background .15s'}}
-            onMouseEnter={e => e.currentTarget.style.background = T.bg3}
-            onMouseLeave={e => e.currentTarget.style.background = T.bg2}
-          >
-            <span style={{color:T.muted, opacity:.35, fontSize:13, userSelect:'none'}}>⠿</span>
-            <span style={{fontSize:11, color:T.muted, width:16, textAlign:'center'}}>{i + 1}</span>
-            {editing === p.id
-              ? <EditRow p={p} onSave={save} onCancel={() => setEditing(null)}/>
-              : <>
-                  <div style={{flex:1}}>
-                    <span style={{fontSize:13, fontWeight:500, color:T.fg}}>{p.label}</span>
-                    <span style={{fontSize:11, color:T.muted, marginLeft:8, opacity:.6}}>{p.file}</span>
-                  </div>
-                  <span style={{fontSize:10, padding:'2px 8px', borderRadius:10,
-                    background: p.visible ? 'oklch(62% 0.16 148 / 0.15)' : 'oklch(60% 0.20 25 / 0.12)',
-                    color: p.visible ? T.green : T.red}}>{p.visible ? 'Visible' : 'Hidden'}</span>
-                  <div style={{display:'flex', gap:5}}>
-                    <Btn onClick={() => toggle(p.id)} small secondary>{p.visible ? 'Hide' : 'Show'}</Btn>
-                    <Btn onClick={() => setEditing(p.id)} small secondary>Edit</Btn>
-                    <a href={p.file} target="_blank"><Btn small secondary>View ↗</Btn></a>
-                    {p.id !== 'home' && <Btn onClick={() => remove(p.id)} small danger>✕</Btn>}
-                  </div>
-                </>
-            }
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function EditRow({p, onSave, onCancel}) {
-  const [label, setLabel] = useState(p.label);
-  const [file,  setFile]  = useState(p.file);
-  return (
-    <div style={{flex:1, display:'flex', gap:8, alignItems:'center'}}>
-      <input value={label} onChange={e => setLabel(e.target.value)}
-        style={{...IS, width:130}} placeholder="Label"/>
-      <input value={file}  onChange={e => setFile(e.target.value)}
-        style={{...IS, flex:1}} placeholder="../page.php"/>
-      <Btn onClick={() => onSave(p.id, label, file)} small>Save</Btn>
-      <Btn onClick={onCancel} small secondary>Cancel</Btn>
-    </div>
-  );
-}
-
-/* ── Media ── */
-function TabMedia() {
-  const [media,     setMedia]     = useState({});
-  const [filter,    setFilter]    = useState('All');
-  const [uploading, setUploading] = useState({});
-  const pages = ['All', ...new Set(IMAGE_SLOTS.map(s => s.page))];
-
-  useEffect(() => {
-    fetch('api/media.php').then(r => r.json()).then(setMedia).catch(() => {});
-  }, []);
-
-  const upload = slot => {
-    const inp = document.createElement('input');
-    inp.type = 'file'; inp.accept = 'image/*,video/mp4';
-    inp.onchange = async e => {
-      const f = e.target.files[0]; if (!f) return;
-      if (f.size > 10 * 1024 * 1024) { alert('Max 10 MB'); return; }
-      setUploading(u => ({...u, [slot.key]: true}));
-      const fd = new FormData(); fd.append('key', slot.key); fd.append('file', f);
-      try {
-        const r = await fetch('api/upload.php', {method:'POST', body:fd});
-        const d = await r.json();
-        if (d.url) setMedia(m => ({...m, [slot.key]: d.url}));
-        else alert(d.error || 'Upload failed');
-      } catch { alert('Upload failed'); }
-      setUploading(u => ({...u, [slot.key]: false}));
-    };
-    inp.click();
-  };
-
-  const remove = async slot => {
-    if (!confirm('Remove this image?')) return;
-    await fetch('api/media.php', {
-      method:'DELETE',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({key: slot.key}),
-    });
-    setMedia(m => ({...m, [slot.key]: null}));
-  };
-
-  const filtered = filter === 'All' ? IMAGE_SLOTS : IMAGE_SLOTS.filter(s => s.page === filter);
-
-  return (
-    <div>
-      <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Media Library</h2>
-      <p style={{color:T.muted, fontSize:13, marginBottom:20}}>
-        Upload photos & videos per section (max 10 MB, stored on server).
-      </p>
-
-      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:24}}>
-        {pages.map(pg => (
-          <button key={pg} onClick={() => setFilter(pg)} style={{
-            padding:'5px 13px', borderRadius:20, cursor:'pointer',
-            border:`1px solid ${filter === pg ? T.accent : T.border}`,
-            background: filter === pg ? 'oklch(62% 0.18 22 / 0.13)' : 'transparent',
-            color: filter === pg ? T.accent : T.muted, fontSize:12, fontWeight:500,
-            transition:'all .15s',
-          }}>{pg}</button>
-        ))}
-      </div>
-
-      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:14}}>
-        {filtered.map(slot => {
-          const src  = media[slot.key];
-          const busy = uploading[slot.key];
+        {pages.map((p, i) => {
+          const visible = visibility[p.id] !== false;
           return (
-            <div key={slot.key} style={{background:T.bg2, border:`1px solid ${T.border}`,
-              borderRadius:8, overflow:'hidden'}}>
-              <div style={{height:140, position:'relative', background:T.bg3, cursor:'pointer'}}
-                onClick={() => !busy && upload(slot)}>
-                {src
-                  ? (src.includes('.mp4')
-                    ? <video src={src} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-                    : <img src={src} alt={slot.label} style={{width:'100%',height:'100%',objectFit:'cover'}}/>)
-                  : <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',
-                      alignItems:'center',justifyContent:'center',gap:6}}>
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
-                        stroke={T.muted} strokeWidth="1.5">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <path d="m21 15-5-5L5 21"/>
-                      </svg>
-                      <span style={{fontSize:10, color:T.muted}}>{busy ? 'Uploading…' : 'No image'}</span>
-                    </div>
-                }
-                <div style={{position:'absolute', inset:0, background:'rgba(0,0,0,0.5)',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  opacity:0, transition:'opacity .2s'}}
-                  onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                  onMouseLeave={e => e.currentTarget.style.opacity = '0'}>
-                  <span style={{color:'white', fontSize:11,
-                    border:'1px solid rgba(255,255,255,0.6)', padding:'4px 12px',
-                    borderRadius:20}}>{src ? 'Change' : 'Upload'}</span>
-                </div>
+            <div key={p.id} draggable
+              onDragStart={() => setDrag(p.id)}
+              onDragOver={e => dragOver(e, p.id)}
+              style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:7,
+                padding:'12px 15px', display:'flex', alignItems:'center', gap:11,
+                cursor:'grab', transition:'background .15s'}}
+              onMouseEnter={e => e.currentTarget.style.background = T.bg3}
+              onMouseLeave={e => e.currentTarget.style.background = T.bg2}
+            >
+              <span style={{color:T.muted, opacity:.35, fontSize:13, userSelect:'none'}}>⠿</span>
+              <span style={{fontSize:11, color:T.muted, width:16, textAlign:'center'}}>{i + 1}</span>
+              <div style={{flex:1}}>
+                <span style={{fontSize:13, fontWeight:500, color:T.fg}}>{p.label}</span>
+                <span style={{fontSize:11, color:T.muted, marginLeft:8, opacity:.6}}>{p.file}</span>
               </div>
-              <div style={{padding:'11px 13px'}}>
-                <div style={{fontSize:11, fontWeight:500, color:T.fg, marginBottom:2}}>{slot.label}</div>
-                <div style={{fontSize:10, color:T.muted, marginBottom:9}}>{slot.page}</div>
-                <div style={{display:'flex', gap:6}}>
-                  <Btn onClick={() => upload(slot)} small disabled={busy}>{src ? 'Replace' : 'Upload'}</Btn>
-                  {src && <Btn onClick={() => remove(slot)} small danger>Remove</Btn>}
-                </div>
+              <span style={{fontSize:10, padding:'2px 8px', borderRadius:10,
+                background: visible ? 'oklch(62% 0.16 148 / 0.15)' : 'oklch(60% 0.20 25 / 0.12)',
+                color: visible ? T.green : T.red}}>{visible ? 'Visible' : 'Hidden'}</span>
+              <div style={{display:'flex', gap:5}}>
+                <Btn onClick={() => toggle(p.id)} small secondary>{visible ? 'Hide' : 'Show'}</Btn>
+                <a href={p.file} target="_blank"><Btn small secondary>View ↗</Btn></a>
               </div>
             </div>
           );
@@ -512,6 +334,171 @@ function TabMedia() {
       </div>
     </div>
   );
+}
+
+/* ── Media ── */
+function TabMedia({splatEnabled}) {
+  const [items,     setItems]     = useState([]);
+  const [filter,    setFilter]    = useState('all');
+  const [typeFilter,setTypeFilter]= useState('all');
+  const [uploading, setUploading] = useState(false);
+  const [uploadCat, setUploadCat] = useState('general');
+  const fileRef = useRef(null);
+
+  const reload = () => {
+    fetch('api/media.php').then(r => r.json()).then(d => setItems(d.items || [])).catch(() => {});
+  };
+  useEffect(reload, []);
+
+  const accept = splatEnabled
+    ? 'image/jpeg,image/png,image/webp,video/mp4,.splat,.ksplat'
+    : 'image/jpeg,image/png,image/webp,video/mp4';
+
+  const onUploadClick = () => fileRef.current?.click();
+
+  const onFiles = async ev => {
+    const files = Array.from(ev.target.files || []);
+    if (!files.length) return;
+    setUploading(true);
+    for (const f of files) {
+      const fd = new FormData();
+      fd.append('file', f);
+      fd.append('category', uploadCat);
+      fd.append('csrf_token', CSRF_TOKEN);
+      try {
+        const r = await fetch('api/upload.php', {
+          method:'POST',
+          headers:{'X-CSRF-Token': CSRF_TOKEN},
+          body: fd
+        });
+        const d = await r.json();
+        if (!d.success) alert(`${f.name}: ${d.error || 'upload failed'}`);
+      } catch { alert(`${f.name}: upload failed`); }
+    }
+    ev.target.value = '';
+    setUploading(false);
+    reload();
+  };
+
+  const togglePublish = async it => {
+    await fetch('api/media.php', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRF-Token': CSRF_TOKEN},
+      body: JSON.stringify({id: it.id, is_published: it.is_published ? 0 : 1}),
+    });
+    reload();
+  };
+
+  const changeCat = async (it, cat) => {
+    await fetch('api/media.php', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRF-Token': CSRF_TOKEN},
+      body: JSON.stringify({id: it.id, category: cat}),
+    });
+    reload();
+  };
+
+  const remove = async it => {
+    if (!confirm('Delete this file? This removes it from disk and DB.')) return;
+    await fetch('api/media.php', {
+      method:'DELETE',
+      headers:{'Content-Type':'application/json','X-CSRF-Token': CSRF_TOKEN},
+      body: JSON.stringify({id: it.id}),
+    });
+    reload();
+  };
+
+  const filtered = items.filter(it => {
+    if (filter !== 'all' && it.category !== filter) return false;
+    if (typeFilter !== 'all' && it.file_type !== typeFilter) return false;
+    return true;
+  });
+
+  const formatBytes = b => {
+    if (b < 1024) return b + ' B';
+    if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+    return (b/1024/1024).toFixed(1) + ' MB';
+  };
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:24}}>
+        <div>
+          <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Media Library</h2>
+          <p style={{color:T.muted, fontSize:13}}>
+            Images (10 MB JPEG/PNG/WebP) · Videos (200 MB MP4){splatEnabled ? ' · 3D Splats (500 MB .splat/.ksplat)' : ''}
+          </p>
+        </div>
+        <div style={{display:'flex', gap:8, alignItems:'center'}}>
+          <select value={uploadCat} onChange={e => setUploadCat(e.target.value)} style={{...IS, width:140}}>
+            {MEDIA_CATEGORIES.filter(c => splatEnabled || c.id !== 'room_tour').map(c => (
+              <option key={c.id} value={c.id}>{c.label}</option>
+            ))}
+          </select>
+          <Btn onClick={onUploadClick} disabled={uploading}>{uploading ? 'Uploading…' : '+ Upload'}</Btn>
+          <input ref={fileRef} type="file" multiple accept={accept} onChange={onFiles} style={{display:'none'}}/>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:10}}>
+        <button onClick={() => setFilter('all')} style={chipStyle(filter==='all')}>All</button>
+        {MEDIA_CATEGORIES.filter(c => splatEnabled || c.id !== 'room_tour').map(c => (
+          <button key={c.id} onClick={() => setFilter(c.id)} style={chipStyle(filter===c.id)}>{c.label}</button>
+        ))}
+      </div>
+      <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:24}}>
+        {[['all','All Types'],['image','📷 Images'],['video','🎬 Videos'],...(splatEnabled?[['splat','🧊 3D Splats']]:[])].map(([k,l]) => (
+          <button key={k} onClick={() => setTypeFilter(k)} style={chipStyle(typeFilter===k, true)}>{l}</button>
+        ))}
+      </div>
+
+      {filtered.length === 0
+        ? <div style={{padding:'40px 20px', textAlign:'center', color:T.muted, fontSize:13,
+            background:T.bg2, border:`1px dashed ${T.border}`, borderRadius:8}}>
+            No media yet. Click <strong>+ Upload</strong> to add files.
+          </div>
+        : <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:14}}>
+            {filtered.map(it => (
+              <div key={it.id} style={{background:T.bg2, border:`1px solid ${T.border}`,
+                borderRadius:8, overflow:'hidden', opacity: it.is_published ? 1 : .55}}>
+                <div style={{height:140, position:'relative', background:T.bg3}}>
+                  {it.file_type === 'image'
+                    ? <img src={it.url} alt={it.original_name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                    : it.file_type === 'video'
+                      ? <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:32,color:T.muted,background:'#000'}}>🎬</div>
+                      : <div style={{width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:36,background:'oklch(28% 0.06 250)'}}>🧊</div>
+                  }
+                  {!it.is_published && <span style={{position:'absolute',top:6,left:6,background:'rgba(0,0,0,0.7)',color:'white',fontSize:9,padding:'2px 6px',borderRadius:3}}>HIDDEN</span>}
+                </div>
+                <div style={{padding:'10px 12px'}}>
+                  <div title={it.original_name} style={{fontSize:11, color:T.fg, marginBottom:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{it.original_name}</div>
+                  <div style={{fontSize:10, color:T.muted, marginBottom:8}}>{formatBytes(it.file_size_bytes)} · {it.file_type}</div>
+                  <select value={it.category} onChange={e => changeCat(it, e.target.value)}
+                    style={{...IS, padding:'4px 6px', fontSize:10, marginBottom:6}}>
+                    {MEDIA_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </select>
+                  <div style={{display:'flex', gap:5}}>
+                    <Btn onClick={() => togglePublish(it)} small secondary>{it.is_published ? 'Hide' : 'Show'}</Btn>
+                    <Btn onClick={() => remove(it)} small danger>✕</Btn>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+      }
+    </div>
+  );
+}
+
+function chipStyle(active, small) {
+  return {
+    padding: small ? '4px 11px' : '5px 13px', borderRadius:20, cursor:'pointer',
+    border:`1px solid ${active ? T.accent : T.border}`,
+    background: active ? 'oklch(62% 0.18 22 / 0.13)' : 'transparent',
+    color: active ? T.accent : T.muted, fontSize: small ? 11 : 12, fontWeight:500,
+    transition:'all .15s',
+  };
 }
 
 /* ── Colors ── */
@@ -535,18 +522,13 @@ function cssVarToHex(themeId, varName) {
   } catch { return '#808080'; }
 }
 
-function TabColors() {
-  const [activeTheme, setActiveTheme] = useState('rosa');
+function TabColors({activeTheme, setActiveTheme}) {
   const [overrides,   setOverrides]   = useState({});
   const [saved,       setSaved]       = useState(false);
   const [loading,     setLoading]     = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      apiGet('active_theme'),
-      apiGet('rosali_color_overrides'),
-    ]).then(([th, ov]) => {
-      if (th) setActiveTheme(th);
+    apiGet('rosali_color_overrides').then(ov => {
       if (ov) try { setOverrides(JSON.parse(ov)); } catch {}
       setLoading(false);
     });
@@ -560,6 +542,7 @@ function TabColors() {
   const setVal = (varName, hex) => {
     const updated = {...overrides, [activeTheme]: {...(overrides[activeTheme] || {}), [varName]: hex}};
     setOverrides(updated);
+    /* Live preview within the admin (front-end picks up on next save+reload) */
     let el = document.getElementById('rosali-color-overrides');
     if (!el) { el = document.createElement('style'); el.id = 'rosali-color-overrides'; document.head.appendChild(el); }
     let css = '';
@@ -598,9 +581,9 @@ function TabColors() {
 
   return (
     <div>
-      <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Colors</h2>
+      <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Colors & Theme</h2>
       <p style={{color:T.muted, fontSize:13, marginBottom:22}}>
-        Customize each theme's palette. Changes apply live across all pages.
+        Select the active site theme, then customize its color palette. Saving updates the live website.
       </p>
 
       <div style={{display:'flex', gap:6, flexWrap:'wrap', marginBottom:28}}>
@@ -611,7 +594,7 @@ function TabColors() {
             background: activeTheme === th ? 'oklch(62% 0.18 22 / 0.13)' : 'transparent',
             color: activeTheme === th ? T.accent : T.muted, fontSize:12, fontWeight:500,
             transition:'all .15s',
-          }}>{THEME_LABELS[th]}</button>
+          }}>{THEME_LABELS[th]}{activeTheme === th && ' ●'}</button>
         ))}
       </div>
 
@@ -650,11 +633,7 @@ function TabColors() {
 
       <div style={{display:'flex', gap:10, justifyContent:'space-between', alignItems:'center', marginTop:8}}>
         <Btn onClick={resetTheme} secondary>Reset {THEME_LABELS[activeTheme]}</Btn>
-        <button onClick={doSave} style={{background: saved ? T.green : T.accent,
-          border:'none', color:'white', padding:'10px 24px', borderRadius:6,
-          fontSize:13, fontWeight:600, transition:'background .3s', cursor:'pointer'}}>
-          {saved ? '✓ Saved!' : 'Save Changes'}
-        </button>
+        <SaveBtn onSave={doSave} saved={saved}/>
       </div>
     </div>
   );
@@ -662,7 +641,7 @@ function TabColors() {
 
 /* ── Content ── */
 function TabContent() {
-  const [activePage, setActivePage] = useState('home');
+  const [activePage, setActivePage] = useState('general');
   const [vals,       setVals]       = useState({});
   const [saved,      setSaved]      = useState(false);
   const [loading,    setLoading]    = useState(true);
@@ -691,7 +670,7 @@ function TabContent() {
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:22}}>
         <div>
           <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Content Editor</h2>
-          <p style={{color:T.muted, fontSize:13}}>Edit text on each page. Leave blank to use the original default.</p>
+          <p style={{color:T.muted, fontSize:13}}>Edit text fields. Leave blank to use the page's built-in default. Saved values appear on every page that uses them.</p>
         </div>
         <SaveBtn onSave={doSave} saved={saved}/>
       </div>
@@ -758,14 +737,9 @@ function TabLayout() {
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:22}}>
         <div>
           <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Layout</h2>
-          <p style={{color:T.muted, fontSize:13}}>Adjust section layouts. Reload the page to see changes.</p>
+          <p style={{color:T.muted, fontSize:13}}>Choose how key sections are arranged on the home page.</p>
         </div>
         <SaveBtn onSave={doSave} saved={saved}/>
-      </div>
-
-      <div style={{fontSize:11, color:T.muted, marginBottom:20, padding:'10px 14px',
-        background:T.bg2, borderRadius:6, border:`1px solid ${T.border}`}}>
-        💡 After saving, open the website page and reload it to see layout changes applied.
       </div>
 
       {loading
@@ -801,75 +775,141 @@ function TabLayout() {
 }
 
 /* ── Settings ── */
-function TabSettings() {
+function TabSettings({splatEnabled, setSplatEnabled}) {
   const [confirmTxt, setConfirmTxt] = useState('');
   const [stats,      setStats]      = useState(null);
+  const [busy,       setBusy]       = useState(false);
 
-  useEffect(() => {
-    fetch('api/settings-stats.php').then(r => r.json()).then(setStats).catch(() => {});
-  }, []);
+  const refreshStats = () => fetch('api/settings-stats.php').then(r => r.json()).then(setStats).catch(() => {});
+
+  useEffect(refreshStats, []);
 
   const clearAll = async () => {
     if (confirmTxt !== 'RESET') { alert('Type RESET to confirm'); return; }
-    await fetch('api/settings-clear.php', {method:'POST'});
-    alert('All admin data cleared. Reload the website to see defaults.');
+    setBusy(true);
+    const r = await fetch('api/settings-clear.php', {
+      method:'POST',
+      headers:{'X-CSRF-Token': CSRF_TOKEN},
+    });
+    const d = await r.json();
+    setBusy(false);
+    if (d.success) {
+      alert('All admin content cleared. Front-end will show defaults on next load.');
+    } else {
+      alert('Reset failed: ' + (d.error || 'unknown error'));
+    }
     setConfirmTxt('');
-    fetch('api/settings-stats.php').then(r => r.json()).then(setStats);
+    refreshStats();
+  };
+
+  const toggleSplat = async () => {
+    const next = !splatEnabled;
+    setSplatEnabled(next);
+    await apiSet('splat_enabled', next ? '1' : '0');
+  };
+
+  const fmtBytes = b => {
+    if (!b) return '0 B';
+    if (b < 1024) return b + ' B';
+    if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+    if (b < 1024*1024*1024) return (b/1024/1024).toFixed(1) + ' MB';
+    return (b/1024/1024/1024).toFixed(2) + ' GB';
   };
 
   return (
     <div>
       <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Settings</h2>
-      <p style={{color:T.muted, fontSize:13, marginBottom:28}}>Storage info and data management.</p>
+      <p style={{color:T.muted, fontSize:13, marginBottom:28}}>Site features, storage info, and data management.</p>
 
+      {/* Splat toggle */}
+      <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:20, marginBottom:16,
+        display:'flex', justifyContent:'space-between', alignItems:'center', gap:16, flexWrap:'wrap'}}>
+        <div>
+          <div style={{fontSize:14, fontWeight:600, color:T.fg, marginBottom:4}}>🧊 Enable 3D Room Tours</div>
+          <p style={{fontSize:12, color:T.muted, lineHeight:1.6, maxWidth:520}}>
+            Adds support for Gaussian Splat (.splat / .ksplat) uploads. When off, splat files cannot be uploaded and the gsplat.js viewer is never loaded on any page (saves bandwidth).
+          </p>
+        </div>
+        <button onClick={toggleSplat} style={{
+          width:54, height:28, borderRadius:14, border:'none',
+          background: splatEnabled ? T.accent : T.bg3,
+          position:'relative', cursor:'pointer', transition:'background .2s'
+        }}>
+          <span style={{position:'absolute', top:3, left: splatEnabled ? 28 : 3,
+            width:22, height:22, borderRadius:'50%', background:'white',
+            transition:'left .2s'}}/>
+        </button>
+      </div>
+
+      {/* Storage stats */}
       <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:20, marginBottom:16}}>
-        <div style={{fontSize:14, fontWeight:600, color:T.fg, marginBottom:12}}>Current Storage</div>
+        <div style={{fontSize:14, fontWeight:600, color:T.fg, marginBottom:12}}>Storage</div>
         {stats
-          ? <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10}}>
-              {[['Media', stats.media, 'files'], ['Content', stats.content, 'text overrides'], ['Colors', stats.colors, 'theme overrides']].map(([l, v, u]) => (
-                <div key={l} style={{padding:'12px 14px', background:T.bg3, borderRadius:6}}>
-                  <div style={{fontSize:20, fontWeight:600, color:T.accent}}>{v}</div>
-                  <div style={{fontSize:11, color:T.muted}}>{l} ({u})</div>
+          ? <>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10, marginBottom:12}}>
+                <StatBox label="Media records" value={stats.media} unit="files in DB"/>
+                <StatBox label="Content overrides" value={stats.content} unit="text fields"/>
+                <StatBox label="Color overrides" value={stats.colors} unit="themes customized"/>
+              </div>
+              {stats.disk && (
+                <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10}}>
+                  <StatBox label="Images on disk" value={stats.disk.images.files} unit={fmtBytes(stats.disk.images.bytes)}/>
+                  <StatBox label="Videos on disk" value={stats.disk.videos.files} unit={fmtBytes(stats.disk.videos.bytes)}/>
+                  <StatBox label="Splats on disk" value={stats.disk.splats.files} unit={fmtBytes(stats.disk.splats.bytes)}/>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           : <div style={{color:T.muted, fontSize:13}}>Loading…</div>
         }
-        <p style={{fontSize:12, color:T.muted, marginTop:14, lineHeight:1.6}}>
-          All data is stored in the <strong style={{color:T.fg}}>MySQL database</strong> and media files on the server.
-          Accessible from any device.
-        </p>
       </div>
 
       <div style={{background:'oklch(60% 0.20 25 / 0.07)',
         border:'1px solid oklch(60% 0.20 25 / 0.3)', borderRadius:8, padding:20}}>
-        <div style={{fontSize:14, fontWeight:600, color:T.red, marginBottom:8}}>⚠ Reset All Admin Data</div>
+        <div style={{fontSize:14, fontWeight:600, color:T.red, marginBottom:8}}>⚠ Reset All Content & Media</div>
         <p style={{fontSize:12, color:T.muted, marginBottom:14, lineHeight:1.6}}>
-          Removes all content overrides, layout preferences, and color customizations.
-          Type <strong style={{color:T.fg}}>RESET</strong> to confirm.
+          Removes every uploaded media file (disk + DB), all content overrides, layout preferences, page visibility, and color customizations. The active theme is preserved. Type <strong style={{color:T.fg}}>RESET</strong> to confirm.
         </p>
         <div style={{display:'flex', gap:10}}>
           <input value={confirmTxt} onChange={e => setConfirmTxt(e.target.value)}
             placeholder="Type RESET" style={{...IS, width:130}}/>
-          <Btn onClick={clearAll} danger>Reset All</Btn>
+          <Btn onClick={clearAll} danger disabled={busy}>{busy ? 'Resetting…' : 'Reset All'}</Btn>
         </div>
       </div>
     </div>
   );
 }
 
+function StatBox({label, value, unit}) {
+  return (
+    <div style={{padding:'12px 14px', background:T.bg3, borderRadius:6}}>
+      <div style={{fontSize:20, fontWeight:600, color:T.accent}}>{value}</div>
+      <div style={{fontSize:11, color:T.muted}}>{label}</div>
+      {unit && <div style={{fontSize:10, color:T.muted, opacity:.7, marginTop:2}}>{unit}</div>}
+    </div>
+  );
+}
+
 /* ── Root App ── */
 function App() {
-  const [tab,   setTab]   = useState('overview');
-  const [pages, setPages] = useState(DEFAULT_PAGES);
+  const [tab,           setTab]           = useState('overview');
+  const [pages,         setPages]         = useState(DEFAULT_PAGES);
+  const [visibility,    setVisibility]    = useState({});
+  const [activeTheme,   setActiveTheme]   = useState('rosa');
+  const [splatEnabled,  setSplatEnabled]  = useState(false);
 
   useEffect(() => {
-    // Inject theme CSS so Colors tab can read CSS variables
-    if (window.initRosali) window.initRosali('rosa', 'en');
-    // Load saved page order from DB
+    if (window.initRosali) window.initRosali();
     apiGet('admin_pages').then(v => {
-      if (v) try { setPages(JSON.parse(v)); } catch {}
+      if (v) try {
+        const arr = JSON.parse(v);
+        if (Array.isArray(arr) && arr.length) setPages(arr);
+      } catch {}
     });
+    apiGet('page_visibility').then(v => {
+      if (v) try { setVisibility(JSON.parse(v) || {}); } catch {}
+    });
+    apiGet('active_theme').then(v => { if (v) setActiveTheme(v); });
+    apiGet('splat_enabled').then(v => { setSplatEnabled(v === '1'); });
   }, []);
 
   const savePages = p => apiSet('admin_pages', JSON.stringify(p));
@@ -879,12 +919,12 @@ function App() {
       <Sidebar tab={tab} setTab={setTab} pageCount={pages.length}/>
       <main style={{flex:1, padding:'32px 36px', overflowY:'auto', maxHeight:'100vh', background:T.bg}}>
         {tab === 'overview' && <TabOverview pages={pages}/>}
-        {tab === 'pages'    && <TabPages pages={pages} setPages={setPages} savePages={savePages}/>}
-        {tab === 'media'    && <TabMedia/>}
-        {tab === 'colors'   && <TabColors/>}
+        {tab === 'pages'    && <TabPages pages={pages} visibility={visibility} setVisibility={setVisibility} setPages={setPages} savePages={savePages}/>}
+        {tab === 'media'    && <TabMedia splatEnabled={splatEnabled}/>}
+        {tab === 'colors'   && <TabColors activeTheme={activeTheme} setActiveTheme={setActiveTheme}/>}
         {tab === 'content'  && <TabContent/>}
         {tab === 'layout'   && <TabLayout/>}
-        {tab === 'settings' && <TabSettings/>}
+        {tab === 'settings' && <TabSettings splatEnabled={splatEnabled} setSplatEnabled={setSplatEnabled}/>}
       </main>
     </div>
   );
