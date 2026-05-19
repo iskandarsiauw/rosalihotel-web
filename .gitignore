@@ -7,3 +7,6 @@ uploads/media/videos/*
 !uploads/media/videos/index.php
 uploads/splats/*
 !uploads/splats/index.php
+
+# Production DB credentials — never commit, upload manually via File Manager
+includes/db.php
