@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS `rooms` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────
--- Table: gallery
+-- Table: gallery (legacy — kept for compat; new content uses `media`)
 -- ─────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `gallery` (
   `id`         INT UNSIGNED  NOT NULL AUTO_INCREMENT,
@@ -96,6 +96,32 @@ CREATE TABLE IF NOT EXISTS `messages` (
   KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ─────────────────────────────────────────
+-- Table: media (unified media library — Phase 5)
+-- file_type: image | video | splat
+-- category : rooms | gallery | events | cafe | general | room_tour
+-- assigned_to: free-text slot/owner — e.g. 'slot:hero___garden_entrance',
+--              'room:3:cover', 'room:3:video', 'room:3:splat', 'gallery'
+-- ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `media` (
+  `id`              INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `filename`        VARCHAR(255) NOT NULL,
+  `original_name`   VARCHAR(255) NOT NULL,
+  `file_type`       ENUM('image','video','splat') NOT NULL,
+  `mime_type`       VARCHAR(100) NOT NULL DEFAULT '',
+  `file_size_bytes` BIGINT       NOT NULL DEFAULT 0,
+  `category`        VARCHAR(50)  NOT NULL DEFAULT 'general',
+  `assigned_to`     VARCHAR(150) NOT NULL DEFAULT '',
+  `is_published`    TINYINT(1)   NOT NULL DEFAULT 1,
+  `uploaded_by`     INT UNSIGNED NOT NULL DEFAULT 0,
+  `created_at`      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_file_type`    (`file_type`),
+  KEY `idx_category`     (`category`),
+  KEY `idx_assigned_to`  (`assigned_to`),
+  KEY `idx_is_published` (`is_published`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ─────────────────────────────────────────
@@ -103,13 +129,15 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- ─────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `settings` (
   `key`   VARCHAR(100) NOT NULL,
-  `value` TEXT,
+  `value` MEDIUMTEXT,
   PRIMARY KEY (`key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `settings` (`key`, `value`) VALUES
-  ('active_theme', 'rosa'),
-  ('active_lang',  'id')
+  ('active_theme',   'rosa'),
+  ('active_lang',    'id'),
+  ('splat_enabled',  '0'),
+  ('page_visibility', '{"home":true,"rooms":true,"events":true,"cafe":true,"gallery":true,"tourism":true,"contact":true}')
 ON DUPLICATE KEY UPDATE `value` = `value`;
 
 -- ─────────────────────────────────────────

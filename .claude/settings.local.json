@@ -15,7 +15,9 @@
       "Bash(git commit *)",
       "PowerShell(& \"C:\\\\xampp\\\\php\\\\php.exe\" -r \"echo password_hash\\('Admin@Rosali123', PASSWORD_BCRYPT\\);\")",
       "Bash(git push *)",
-      "Bash(curl -s \"http://localhost:8088/rosalihotel/\")"
+      "Bash(curl -s \"http://localhost:8088/rosalihotel/\")",
+      "Bash(\"D:/xampp/mysql/bin/mysql.exe\" -uroot rosalihotel)",
+      "Bash(\"D:/xampp/mysql/bin/mysql.exe\" -uroot rosalihotel -e \"SHOW TABLES; SELECT * FROM settings;\")"
     ]
   }
 }
