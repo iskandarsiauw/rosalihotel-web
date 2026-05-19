@@ -119,5 +119,5 @@ ON DUPLICATE KEY UPDATE `value` = `value`;
 -- ─────────────────────────────────────────
 INSERT IGNORE INTO `users` (`username`, `password`) VALUES (
   'admin',
-  '$2y$10$opSidoUXgAoe9Gvl2MjwRuaLw6LrrZCW4j.OemPrCwrbBQc3RB7y6'
+  '$2y$10$Ov7ZfRQBbJQ.8yB7cm/u6uJVVIvhLEZdlXvGAMRl/WOLgGOC6u6rG'
 );

@@ -70,3 +70,47 @@ To be deployed on cPanel (Rumahweb shared hosting).
 - Open Graph tags for social sharing (og:title, og:description, og:image)
 - Schema.org markup for Hotel and LodgingBusiness types
 - Page load speed: compress images before upload, minify CSS/JS for production
+
+## Theme System
+- 6 themes: garden, boutique, javanese, rosa, coastal, batik
+- Default active theme: rosa
+- Theme stored in database (settings table), not localStorage
+- Admin panel has Theme Switcher page to change active theme
+- Theme applied server-side: PHP reads active theme from DB, 
+  outputs correct class on <body> tag
+- Theme CSS lives in shared.jsx (keep as-is, loaded client-side)
+- Future themes can be added to shared.jsx THEME_CSS block + registered in DB
+- Color overrides per theme also stored in DB (rosali_color_overrides column)
+- URL ?theme= parameter still works for previewing themes without changing active
+
+## Claude Code Run Mode
+- Run with --dangerously-skip-permissions for autonomous builds
+- Git commit after each major completed section as checkpoint
+- Initialize git repo in this folder before first session
+
+## Build Progress
+- Phase 1 complete: folder structure, SQL tables, HTML→PHP rename, git setup
+- Phase 2 complete: admin login, dashboard, logout, seed admin user
+- Phase 3 complete: settings table, theme system DB-driven, all pages wired
+- Next: admin theme switcher page, then admin rooms management
+
+## Admin Credentials (local dev only)
+- Username: admin
+- Password: Admin@Rosali123
+- URL: http://localhost:8088/rosalihotel/admin/
+
+## Git Commit Rules
+- Commit after every completed feature or logical unit of work
+- Never batch unrelated changes into one commit
+- Commit message format: "Phase X: short description of what was done"
+- Examples:
+  - "Phase 4A: admin theme switcher page"
+  - "Phase 4B: rooms table migration"
+  - "Phase 4B: rooms list and delete"
+  - "Phase 4B: rooms add/edit form with photo upload"
+- Always run `git add -A` then `git commit -m "message"` after each unit
+- Do not wait until everything is done to commit — commit incrementally
+- If a phase has multiple files, commit each logical group separately:
+  - DB migration first
+  - Backend logic second  
+  - UI/view files third
