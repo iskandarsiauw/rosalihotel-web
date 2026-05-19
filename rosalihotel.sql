@@ -99,6 +99,20 @@ CREATE TABLE IF NOT EXISTS `messages` (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ─────────────────────────────────────────
+-- Table: settings
+-- ─────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `settings` (
+  `key`   VARCHAR(100) NOT NULL,
+  `value` TEXT,
+  PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `settings` (`key`, `value`) VALUES
+  ('active_theme', 'rosa'),
+  ('active_lang',  'id')
+ON DUPLICATE KEY UPDATE `value` = `value`;
+
+-- ─────────────────────────────────────────
 -- Seed: default admin user
 -- username : admin
 -- password : Admin@Rosali123  (bcrypt)

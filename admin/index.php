@@ -1,10 +1,14 @@
 <?php
+require_once '../includes/db.php';
+require_once '../includes/functions.php';
 session_start();
 if (!empty($_SESSION['admin_id'])) {
     header('Location: dashboard.php');
     exit;
 }
 $error = isset($_GET['error']) ? (int)$_GET['error'] : 0;
+$theme = getActiveTheme();
+$lang  = getActiveLang();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,7 +47,7 @@ button[type=submit]:hover{opacity:.85}
 .back:hover{color:oklch(62% 0.18 22)}
 </style>
 </head>
-<body>
+<body class="theme-<?= $theme ?>">
 <div class="card">
   <div class="logo">
     <div class="logo-mark">R</div>
