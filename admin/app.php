@@ -83,6 +83,53 @@ const MEDIA_CATEGORIES = [
   {id:'room_tour', label:'Room Tour (3D)'},
 ];
 
+/* Slot catalog — every named placeholder on the front-end. Slot keys are
+   derived from the original RosaliImg label via slotKey(); admins pick the
+   friendly label and the assignment is saved as assigned_to='slot:<key>'. */
+const SLOT_DEFS = [
+  // Home
+  {label:'hero — hotel garden entrance / aerial view at golden hour', friendly:'Hero — Garden Entrance / Aerial',       page:'Home'},
+  {label:'about — garden gazebo / tropical flowers',                  friendly:'About — Gazebo / Tropical Flowers',     page:'Home'},
+  // Rooms
+  {label:'rooms hero — garden villa exterior / bungalow cluster aerial', friendly:'Rooms — Hero / Villa Exterior',      page:'Rooms'},
+  ...['wooden','oriental','vip','superior','standard'].flatMap(k => [
+    {label:`${k} room — main interior / bedroom`, friendly:`Room: ${k} — Main / Bedroom`, page:'Rooms'},
+    {label:`${k} room — bathroom`,                friendly:`Room: ${k} — Bathroom`,        page:'Rooms'},
+    {label:`${k} room — terrace / outdoor area`,  friendly:`Room: ${k} — Terrace`,         page:'Rooms'},
+    {label:`${k} — thumbnail`,                    friendly:`Room: ${k} — Thumbnail`,       page:'Rooms'},
+  ]),
+  // Events
+  {label:'events hero — dream garden wedding / meeting setup aerial', friendly:'Events — Hero',                         page:'Events'},
+  {label:'meeting — jasmine room setup / seminar arrangement',        friendly:'Events — Meeting Room Setup',           page:'Events'},
+  {label:'wedding — dream garden ceremony / floral setup / night lighting', friendly:'Events — Wedding Ceremony',       page:'Events'},
+  ...['jasmine meeting room','tulip meeting room','lavender meeting room','the dream garden','main restaurant hall',
+      'ruang rapat jasmine','ruang rapat tulip','ruang rapat lavender','aula restoran utama']
+     .map(h => ({label:`hall — ${h}`, friendly:`Hall — ${h}`, page:'Events'})),
+  // Café
+  {label:'cafe hero — Rosa De 5 interior / barista / specialty coffee setup', friendly:'Café — Hero',                    page:'Café'},
+  {label:'cafe — interior ambiance / cozy seating area',              friendly:'Café — Interior',                       page:'Café'},
+  {label:'cafe — barista making pour over coffee',                    friendly:'Café — Barista',                        page:'Café'},
+  {label:'cafe — garden outdoor seating',                             friendly:'Café — Garden Seating',                 page:'Café'},
+  {label:'cafe — Rosa De 5 interior / specialty coffee / slow bar',   friendly:'Café — Specialty Coffee',               page:'Café'},
+  // Tourism
+  ...['pasir putih beach','ijen crater','baluran national park','colonial heritage sites','taman nasional meru betiri','local markets & batik',
+      'pantai pasir putih','kawah ijen','taman nasional baluran','warisan kolonial','tn meru betiri','pasar & batik lokal']
+     .map(s => ({label:`tourism — ${s}`, friendly:`Tourism — ${s}`, page:'Tourism'})),
+  // Contact
+  {label:'map — Google Maps embed Jl. PB Sudirman 52 Situbondo', friendly:'Contact — Map',                              page:'Contact'},
+  {label:'hotel — front exterior / signage at road',             friendly:'Contact — Front Exterior',                   page:'Contact'},
+];
+
+/* Mirror of shared.jsx slotKey() — must stay in sync. */
+function adminSlotKey(label){
+  return label.replace(/[^a-z0-9]/gi,'_').slice(0,50).toLowerCase();
+}
+const SLOTS = SLOT_DEFS.map(d => ({...d, key: adminSlotKey(d.label)}));
+const SLOTS_BY_PAGE = SLOTS.reduce((acc, s) => {
+  (acc[s.page] = acc[s.page] || []).push(s);
+  return acc;
+}, {});
+
 const THEME_VARS = [
   {key:'--bg',        label:'Background',       group:'Backgrounds'},
   {key:'--bg2',       label:'Background Alt',   group:'Backgrounds'},
@@ -403,6 +450,27 @@ function TabMedia({splatEnabled}) {
     reload();
   };
 
+  const assignSlot = async (it, slotKey) => {
+    /* Empty selection clears the assignment; otherwise unassign any other item
+       already using this slot (one image per slot) before assigning. */
+    if (slotKey && slotKey !== '') {
+      const occupant = items.find(m => m.id !== it.id && m.assigned_to === ('slot:' + slotKey));
+      if (occupant) {
+        await fetch('api/media.php', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','X-CSRF-Token': CSRF_TOKEN},
+          body: JSON.stringify({id: occupant.id, assigned_to: ''}),
+        });
+      }
+    }
+    await fetch('api/media.php', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-CSRF-Token': CSRF_TOKEN},
+      body: JSON.stringify({id: it.id, assigned_to: slotKey ? ('slot:' + slotKey) : ''}),
+    });
+    reload();
+  };
+
   const remove = async it => {
     if (!confirm('Delete this file? This removes it from disk and DB.')) return;
     await fetch('api/media.php', {
@@ -479,6 +547,24 @@ function TabMedia({splatEnabled}) {
                 <div style={{padding:'10px 12px'}}>
                   <div title={it.original_name} style={{fontSize:11, color:T.fg, marginBottom:3, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{it.original_name}</div>
                   <div style={{fontSize:10, color:T.muted, marginBottom:8}}>{formatBytes(it.file_size_bytes)} · {it.file_type}</div>
+
+                  {it.file_type !== 'splat' && (
+                    <>
+                      <label style={{fontSize:9, color:T.muted, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:2, display:'block'}}>Use at</label>
+                      <select value={(it.assigned_to||'').startsWith('slot:') ? it.assigned_to.slice(5) : ''}
+                        onChange={e => assignSlot(it, e.target.value)}
+                        style={{...IS, padding:'4px 6px', fontSize:10, marginBottom:6}}>
+                        <option value="">— Not assigned —</option>
+                        {Object.entries(SLOTS_BY_PAGE).map(([pg, list]) => (
+                          <optgroup key={pg} label={pg}>
+                            {list.map(s => <option key={s.key} value={s.key}>{s.friendly}</option>)}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </>
+                  )}
+
+                  <label style={{fontSize:9, color:T.muted, textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:2, display:'block'}}>Category</label>
                   <select value={it.category} onChange={e => changeCat(it, e.target.value)}
                     style={{...IS, padding:'4px 6px', fontSize:10, marginBottom:6}}>
                     {MEDIA_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
