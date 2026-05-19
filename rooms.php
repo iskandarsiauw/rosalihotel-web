@@ -1,8 +1,19 @@
 <?php
 require_once 'includes/db.php';
 require_once 'includes/functions.php';
-$theme = getActiveTheme();
-$lang  = getActiveLang();
+$theme        = getActiveTheme();
+$lang         = getActiveLang();
+$splatEnabled = isSplatEnabled();
+
+/* Splat assignments per room: slot key = 'room_<key>_splat' */
+$roomKeys     = ['wooden','oriental','vip','superior','standard'];
+$roomSplats   = [];
+if ($splatEnabled) {
+  foreach ($roomKeys as $rk) {
+    $m = mediaForSlot('room_' . $rk . '_splat');
+    if ($m) $roomSplats[$rk] = $m['url'];
+  }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -16,11 +27,19 @@ $lang  = getActiveLang();
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 </head>
-<body class="theme-<?= $theme ?>"><div id="root"></div>
+<body class="theme-<?= $theme ?>">
+<?php require __DIR__ . '/includes/front_init.php'; ?>
+<div id="root"></div>
 <script type="text/babel" src="shared.jsx"></script>
+<?php if ($splatEnabled && $roomSplats): ?>
+<!-- gsplat.js loaded only when at least one room has a splat assigned -->
+<script type="module" src="https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.6/build/gaussian-splats-3d.module.min.js" defer></script>
+<?php endif; ?>
 <script type="text/babel">
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliPageHero, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme } = window;
+const ROOM_SPLATS = <?= json_encode($roomSplats) ?>;
+const SPLAT_ENABLED = <?= $splatEnabled ? 'true' : 'false' ?>;
 
 const ROOMS = [
   { key:'wooden', tag:'Signature', nameEn:'The Wooden House', nameId:'The Wooden House',
@@ -44,6 +63,38 @@ const ROOMS = [
     descId:'Kamar standar yang bersih, nyaman, dan tertata baik. Semua yang Anda butuhkan untuk menginap nyaman — sempurna untuk tamu transit dan bisnis.',
     amenities:['Queen/Twin Bed','AC','Hot Shower','WiFi','TV'] },
 ];
+
+/* gsplat.js viewer — only rendered when SPLAT_ENABLED and a splat URL exists for the active room. */
+function SplatViewer({url}){
+  const ref = useRef(null);
+  useEffect(()=>{
+    let viewer;
+    let cancelled = false;
+    (async () => {
+      try {
+        const mod = await import('https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.6/build/gaussian-splats-3d.module.min.js');
+        if (cancelled || !ref.current) return;
+        viewer = new mod.Viewer({
+          rootElement: ref.current,
+          cameraUp: [0, -1, 0],
+          initialCameraPosition: [0, 0, 5],
+          initialCameraLookAt: [0, 0, 0],
+          sharedMemoryForWorkers: false,
+        });
+        await viewer.addSplatScene(url, { showLoadingUI: true });
+        if (!cancelled) viewer.start();
+      } catch (e) { console.error('splat viewer failed:', e); }
+    })();
+    return () => { cancelled = true; try { viewer?.dispose?.(); } catch {} };
+  }, [url]);
+  return (
+    <div style={{gridColumn:'span 2', marginTop:18}}>
+      <div style={{fontFamily:'var(--font-b)',fontSize:11,letterSpacing:'0.12em',
+        textTransform:'uppercase',color:'var(--accent)',marginBottom:10}}>3D Room Tour</div>
+      <div ref={ref} style={{width:'100%',height:420,background:'#000',borderRadius:2,position:'relative',overflow:'hidden'}}/>
+    </div>
+  );
+}
 
 function App(){
   const [theme,setTheme]=useState('<?= $theme ?>');
@@ -97,6 +148,10 @@ function App(){
             <RosaliImg label={`${room.key} room — bathroom`} h="100%" style={{height:'100%'}}/>
             <RosaliImg label={`${room.key} room — terrace / outdoor area`} h="100%" style={{height:'100%'}}/>
           </div>
+
+          {SPLAT_ENABLED && ROOM_SPLATS[room.key] && (
+            <SplatViewer key={room.key} url={ROOM_SPLATS[room.key]}/>
+          )}
 
           {/* Info */}
           <div style={{paddingTop:8}}>

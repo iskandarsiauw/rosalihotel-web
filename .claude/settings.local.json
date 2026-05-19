@@ -17,7 +17,12 @@
       "Bash(git push *)",
       "Bash(curl -s \"http://localhost:8088/rosalihotel/\")",
       "Bash(\"D:/xampp/mysql/bin/mysql.exe\" -uroot rosalihotel)",
-      "Bash(\"D:/xampp/mysql/bin/mysql.exe\" -uroot rosalihotel -e \"SHOW TABLES; SELECT * FROM settings;\")"
+      "Bash(\"D:/xampp/mysql/bin/mysql.exe\" -uroot rosalihotel -e \"SHOW TABLES; SELECT * FROM settings;\")",
+      "Bash(curl -s \"http://localhost:8088/rosalihotel/index.php\")",
+      "Bash(curl -sI \"http://localhost:8088/rosalihotel/index.php\")",
+      "Bash(\"D:/xampp/php/php.exe\" -d display_errors=1 -f index.php)",
+      "Bash(\"D:/xampp/php/php.exe\" -d display_errors=1 -f gallery.php)",
+      "Bash(\"D:/xampp/php/php.exe\" -d display_errors=1 -f app.php)"
     ]
   }
 }

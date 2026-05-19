@@ -8,15 +8,15 @@ if (!function_exists('getActiveTheme')) {
 }
 
 $rosali = [
-    'theme'        => getActiveTheme(),
-    'lang'         => getActiveLang(),
-    'pageVisibility' => pageVisibility(),
-    'pageOrder'    => pageOrder(),
-    'content'      => allContentOverrides(),
-    'layout'       => allLayoutPrefs(),
-    'colors'       => colorOverridesAll(),
-    'images'       => mediaSlotMap(),
-    'splatEnabled' => isSplatEnabled(),
+    'theme'          => getActiveTheme(),
+    'lang'           => getActiveLang(),
+    'pageVisibility' => (object) pageVisibility(),
+    'pageOrder'      => pageOrder(),
+    'content'        => (object) allContentOverrides(),
+    'layout'         => (object) allLayoutPrefs(),
+    'colors'         => (object) colorOverridesAll(),
+    'images'         => (object) mediaSlotMap(),
+    'splatEnabled'   => isSplatEnabled(),
 ];
 ?>
 <script>window.ROSALI = <?= json_encode($rosali, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>

@@ -17,6 +17,7 @@ $lang  = getActiveLang();
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 </head>
 <body class="theme-<?= $theme ?>">
+<?php require __DIR__ . '/includes/front_init.php'; ?>
 <div id="root"></div>
 <script type="text/babel" src="shared.jsx"></script>
 <script type="text/babel">
@@ -127,30 +128,6 @@ function App(){
             maxWidth:440,lineHeight:1.75,marginBottom:38,opacity:.9}}>{c.hero.sub}</p>
           <RosaliBtn text={c.hero.cta} style={{fontSize:14,padding:'15px 30px'}}/>
         </div>
-        {/* Hero upload button — top-right corner */}
-        <button onClick={()=>{
-          const label='hero — hotel garden entrance / aerial view at golden hour';
-          const key='ri_'+label.replace(/[^a-z0-9]/gi,'_').slice(0,50);
-          const inp=document.createElement('input');
-          inp.type='file';inp.accept='image/*,video/mp4,video/webm';
-          inp.onchange=e=>{
-            const f=e.target.files[0];if(!f)return;
-            if(f.size>6*1024*1024){alert('Max 6MB');return;}
-            const r=new FileReader();
-            r.onload=ev=>{try{localStorage.setItem(key,ev.target.result)}catch(ex){}window.location.reload();};
-            r.readAsDataURL(f);
-          };
-          inp.click();
-        }} style={{position:'absolute',top:80,right:20,zIndex:10,
-          background:'rgba(0,0,0,0.45)',border:'1px solid rgba(255,255,255,0.35)',
-          color:'white',borderRadius:20,padding:'7px 14px',fontSize:12,
-          fontFamily:'var(--font-b)',cursor:'pointer',display:'flex',alignItems:'center',gap:6,
-          backdropFilter:'blur(8px)',transition:'background .2s'}}
-          onMouseEnter={e=>e.currentTarget.style.background='rgba(0,0,0,0.7)'}
-          onMouseLeave={e=>e.currentTarget.style.background='rgba(0,0,0,0.45)'}
-        >
-          📷 {lang==='en'?'Change Hero Photo/Video':'Ganti Foto/Video Hero'}
-        </button>
       </section>
 
       {/* ABOUT */}
@@ -291,10 +268,6 @@ function App(){
                 padding:'8px',cursor:'pointer',fontSize:12,fontWeight:600,transition:'all .18s'
               }}>{l==='en'?'🇬🇧 EN':'🇮🇩 ID'}</button>
             ))}
-          </div>
-          <div style={{height:1,background:'var(--border)',margin:'12px 0'}}/>
-          <div style={{fontSize:10,color:'var(--fg-muted)',lineHeight:1.5}}>
-            💡 Klik foto manapun untuk upload gambar Anda
           </div>
         </div>
       )}

@@ -1,13 +1,20 @@
 // shared.jsx — loaded by every Rosali page via <script type="text/babel" src="shared.jsx">
-// Exports to window: RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliWaFab, NAV_PAGES, initRosali
+// All content (theme, lang, content overrides, layout prefs, color overrides, media slot URLs,
+// page visibility) is injected server-side as window.ROSALI by includes/front_init.php.
+// This script does NOT touch localStorage for any content data — only for language preference.
 
 const { useState, useEffect, useRef } = React;
 
-/* ── URL theme helpers ───────────────────────────────────── */
+/* ── ROSALI data (injected by PHP) ─────────────────────────── */
+const R = window.ROSALI || {
+  theme:'rosa', lang:'id', images:{}, content:{}, layout:{}, colors:{},
+  pageVisibility:{}, pageOrder:[], splatEnabled:false,
+};
+
+/* URL theme is preview-only — never written, never persisted. */
 function getUrlTheme(){
   try{ return new URLSearchParams(window.location.search).get('theme'); }catch{ return null; }
 }
-/* setUrlTheme: no-op — theme is managed server-side via admin panel */
 function setUrlTheme(_t){ /* no-op */ }
 
 /* ── Responsive hook ─────────────────────────────────────── */
@@ -53,7 +60,6 @@ img{display:block;width:100%;height:100%;object-fit:cover}
   --card:oklch(15% 0.024 60);--nav-bg:oklch(18% 0.022 55);--nav-fg:oklch(93% 0.020 82);
   --font-d:'Libre Baskerville',Georgia,serif;--font-b:'Lato',sans-serif;
 }
-/* ── NEW THEMES ── */
 .theme-rosa{
   --bg:oklch(98% 0.008 15);--bg2:oklch(94% 0.016 12);
   --fg:oklch(16% 0.045 20);--fg-muted:oklch(44% 0.035 18);
@@ -84,7 +90,7 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--fg);transition:b
 ::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
 `;
 
-/* ── Nav pages ───────────────────────────────────────────── */
+/* ── Default nav pages (labels per locale) ─────────────── */
 const NAV_PAGES = {
   en:[
     {key:'home',   label:'Home',         href:'index.php'},
@@ -106,63 +112,45 @@ const NAV_PAGES = {
   ]
 };
 
-/* theme no longer travels through URLs — DB is the source of truth */
-function navHref(href, _theme){ return href; }
+function navHref(href){ return href; }
 
-/* ── Read pages from admin (with hide/show + reorder) ── */
+/* Build nav by filtering defaults by visibility, then reordering per admin pageOrder if present. */
 function getActivePages(lang){
-  try{
-    const raw = localStorage.getItem('admin_pages');
-    if(!raw) return NAV_PAGES[lang];
-    const adminPages = JSON.parse(raw);
-    // Map admin entries -> nav entries (translate label if it's a default page)
-    const defaults = NAV_PAGES[lang];
-    return adminPages
-      .filter(p => p.visible !== false)
-      .map(p => {
-        const def = defaults.find(d => d.key === p.id);
-        return {
-          key: p.id,
-          label: def ? def.label : p.label,
-          href: p.file,
-        };
-      });
-  }catch{ return NAV_PAGES[lang]; }
+  const defaults = NAV_PAGES[lang] || NAV_PAGES.id;
+  const vis = R.pageVisibility || {};
+  const visible = defaults.filter(p => vis[p.key] !== false);
+
+  const order = Array.isArray(R.pageOrder) ? R.pageOrder : [];
+  if (!order.length) return visible;
+
+  const orderMap = new Map(order.map((o, i) => [o.id, i]));
+  return [...visible].sort((a, b) => {
+    const ai = orderMap.has(a.key) ? orderMap.get(a.key) : 999;
+    const bi = orderMap.has(b.key) ? orderMap.get(b.key) : 999;
+    return ai - bi;
+  });
 }
 
-/* ── Image with click-to-upload ─────────────────────────── */
-function RosaliImg({label, h=300, style={}, noUpload=false}){
-  const key = 'ri_'+label.replace(/[^a-z0-9]/gi,'_').slice(0,50);
-  const [src,setSrc] = useState(()=>{ try{return localStorage.getItem(key)}catch{return null} });
-  const [hov,setHov] = useState(false);
+/* ── Image — DB-driven, no upload UI ─────────────────────── */
+/* `label` is the slot identifier. The PHP layer maps slot → media URL via
+   the media table (assigned_to = 'slot:<key>'). When no media is assigned,
+   render the labelled placeholder pattern. */
+function slotKey(label){
+  return label.replace(/[^a-z0-9]/gi,'_').slice(0,50).toLowerCase();
+}
 
-  const upload = ()=>{
-    const inp = document.createElement('input');
-    inp.type='file'; inp.accept='image/*,video/mp4,video/webm';
-    inp.onchange = e=>{
-      const f = e.target.files[0]; if(!f) return;
-      if(f.size > 6*1024*1024){ alert('Max 6MB untuk preview. Gunakan file lebih kecil.'); return; }
-      const r = new FileReader();
-      r.onload = ev=>{ try{localStorage.setItem(key,ev.target.result)}catch(ex){} setSrc(ev.target.result); };
-      r.readAsDataURL(f);
-    };
-    inp.click();
-  };
-
-  const isVid = src && src.startsWith('data:video');
+function RosaliImg({label, h=300, style={}}){
+  const key = slotKey(label);
+  const src = R.images[key] || null;
+  const isVid = src && /\.mp4($|\?)/i.test(src);
 
   return(
-    <div style={{width:'100%',height:h,position:'relative',overflow:'hidden',
-      cursor:noUpload?'default':'pointer',...style}}
-      onClick={noUpload?undefined:upload}
-      onMouseEnter={()=>!noUpload&&setHov(true)}
-      onMouseLeave={()=>setHov(false)}
-    >
-      {src?(
+    <div style={{width:'100%',height:h,position:'relative',overflow:'hidden',...style}}>
+      {src ? (
         isVid
-          ?<video src={src} autoPlay loop muted playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-          :<img src={src} alt={label} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
-      ):(
+          ? <video src={src} autoPlay loop muted playsInline style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+          : <img src={src} alt={label} style={{width:'100%',height:'100%',objectFit:'cover'}} loading="lazy"/>
+      ) : (
         <>
           <svg width="100%" height="100%" style={{position:'absolute',inset:0}} xmlns="http://www.w3.org/2000/svg">
             <defs><pattern id={key} x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(40)">
@@ -170,23 +158,12 @@ function RosaliImg({label, h=300, style={}, noUpload=false}){
             <rect width="100%" height="100%" fill={`url(#${key})`}/>
           </svg>
           <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',
-            alignItems:'center',justifyContent:'center',gap:8,
-            background:hov?'rgba(0,0,0,0.05)':'transparent',transition:'background .2s'}}>
+            alignItems:'center',justifyContent:'center',gap:8}}>
             <span style={{fontFamily:'monospace',fontSize:11,color:'var(--fg-muted)',
               textAlign:'center',padding:'6px 11px',background:'var(--bg)',borderRadius:3,
-              opacity:.9,maxWidth:'85%',lineHeight:1.4}}>{label}</span>
-            {!noUpload&&hov&&<span style={{fontFamily:'var(--font-b)',fontSize:11,color:'var(--accent)',
-              fontWeight:500,background:'var(--bg)',padding:'4px 10px',borderRadius:20,
-              border:'1px solid var(--accent)'}}>📁 Klik untuk upload foto/video</span>}
+              opacity:.85,maxWidth:'85%',lineHeight:1.4}}>{label}</span>
           </div>
         </>
-      )}
-      {src&&hov&&!noUpload&&(
-        <div style={{position:'absolute',inset:0,background:'rgba(0,0,0,0.48)',
-          display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <span style={{color:'white',fontFamily:'var(--font-b)',fontSize:12,
-            padding:'6px 14px',border:'1px solid rgba(255,255,255,0.7)',borderRadius:20}}>🔄 Ganti foto</span>
-        </div>
       )}
     </div>
   );
@@ -201,7 +178,6 @@ function RosaliNav({lang,setLang,current,theme}){
     const fn=()=>setSc(window.scrollY>55);
     window.addEventListener('scroll',fn); return()=>window.removeEventListener('scroll',fn);
   },[]);
-  // close menu on resize to desktop
   useEffect(()=>{ if(!isMobile) setOpen(false); },[isMobile]);
   const pages=getActivePages(lang);
   const alwaysSolid = !['home'].includes(current);
@@ -215,17 +191,16 @@ function RosaliNav({lang,setLang,current,theme}){
         boxShadow:solid?'0 1px 0 rgba(255,255,255,0.05)':'none',
         padding:'0 clamp(14px,4vw,60px)',display:'flex',alignItems:'center',
         justifyContent:'space-between',gap:12}}>
-        <a href={navHref('index.php', theme)} style={{display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
+        <a href={navHref('index.php')} style={{display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
           <img src="logo.png" alt="Rosali Hotel" style={{height:36,width:'auto',display:'block'}}/>
           <span style={{fontFamily:'var(--font-d)',fontSize:17,fontWeight:600,
-            color:'var(--nav-fg)',letterSpacing:'0.08em',whiteSpace:'nowrap'}}>Rosali Hotel</span>
+            color:'var(--nav-fg)',letterSpacing:'0.08em',whiteSpace:'nowrap'}}>{RC('hotel_name','Rosali Hotel')}</span>
         </a>
 
-        {/* Desktop links */}
         {!isMobile&&(
           <div style={{display:'flex',alignItems:'center',gap:'clamp(10px,1.6vw,22px)',flexWrap:'wrap'}}>
             {pages.map(p=>(
-              <a key={p.key} href={navHref(p.href, theme)} style={{fontFamily:'var(--font-b)',fontSize:11,fontWeight:500,
+              <a key={p.key} href={navHref(p.href)} style={{fontFamily:'var(--font-b)',fontSize:11,fontWeight:500,
                 letterSpacing:'0.09em',textTransform:'uppercase',color:'var(--nav-fg)',
                 opacity:current===p.key?1:.65,
                 borderBottom:current===p.key?'1px solid var(--accent)':'1px solid transparent',
@@ -237,7 +212,6 @@ function RosaliNav({lang,setLang,current,theme}){
           </div>
         )}
 
-        {/* Right controls */}
         <div style={{display:'flex',alignItems:'center',gap:9,flexShrink:0}}>
           <button onClick={()=>setLang(lang==='en'?'id':'en')} style={{
             background:'none',border:'1px solid var(--nav-fg)',color:'var(--nav-fg)',
@@ -245,7 +219,6 @@ function RosaliNav({lang,setLang,current,theme}){
             letterSpacing:'0.1em',fontFamily:'var(--font-b)',opacity:.7,cursor:'pointer'}}>
             {lang==='en'?'🇮🇩 ID':'🇬🇧 EN'}</button>
           {!isMobile&&<RosaliBtn text={lang==='en'?'Book Now':'Pesan'} style={{padding:'7px 14px',fontSize:10}}/>}
-          {/* Hamburger */}
           {isMobile&&(
             <button onClick={()=>setOpen(o=>!o)} style={{
               background:'none',border:'none',color:'var(--nav-fg)',cursor:'pointer',
@@ -264,7 +237,6 @@ function RosaliNav({lang,setLang,current,theme}){
         </div>
       </nav>
 
-      {/* Mobile drawer */}
       {isMobile&&(
         <div style={{
           position:'fixed',top:64,left:0,right:0,zIndex:199,
@@ -275,7 +247,7 @@ function RosaliNav({lang,setLang,current,theme}){
         }}>
           <div style={{padding:'16px 0 24px'}}>
             {pages.map(p=>(
-              <a key={p.key} href={navHref(p.href, theme)} onClick={()=>setOpen(false)}
+              <a key={p.key} href={navHref(p.href)} onClick={()=>setOpen(false)}
                 style={{display:'block',fontFamily:'var(--font-b)',fontSize:14,fontWeight:500,
                   letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--nav-fg)',
                   opacity:current===p.key?1:.7,padding:'14px clamp(14px,4vw,60px)',
@@ -305,7 +277,7 @@ function RosaliFooter({lang}){
       <div style={{display:'flex',alignItems:'center',gap:10}}>
         <img src="logo.png" alt="Rosali Hotel" style={{height:48,width:'auto',display:'block',opacity:.9}}/>
         <div style={{fontFamily:'var(--font-b)',fontSize:10,opacity:.35,marginTop:3}}>
-          © 2025 Rosali Hotel & Restaurant
+          © 2025 {RC('hotel_name','Rosali Hotel')} & Restaurant
         </div>
       </div>
       <div style={{display:'flex',gap:16,flexWrap:'wrap'}}>
@@ -327,9 +299,14 @@ function RosaliFooter({lang}){
 }
 
 /* ── Button ──────────────────────────────────────────────── */
-function RosaliBtn({text,href="https://wa.me/6287851515500",icon=true,style={}}){
+function waHref(){
+  const num = RC('wa_number','6287851515500').replace(/\D/g,'') || '6287851515500';
+  return `https://wa.me/${num}`;
+}
+function RosaliBtn({text,href,icon=true,style={}}){
+  const target = href || waHref();
   return(
-    <a href={href} target={href.startsWith('http')?'_blank':undefined} rel="noopener noreferrer"
+    <a href={target} target={target.startsWith('http')?'_blank':undefined} rel="noopener noreferrer"
       style={{display:'inline-flex',alignItems:'center',gap:8,background:'var(--accent)',
         color:'var(--bg)',padding:'12px 22px',borderRadius:2,fontFamily:'var(--font-b)',
         fontWeight:500,fontSize:13,letterSpacing:'0.04em',
@@ -356,23 +333,10 @@ function RosaliLabel({children}){
 
 /* ── Page Hero (sub-pages) ───────────────────────────────── */
 function RosaliPageHero({imgLabel, sup, title, sub}){
-  const triggerUpload = ()=>{
-    const key='ri_'+imgLabel.replace(/[^a-z0-9]/gi,'_').slice(0,50);
-    const inp=document.createElement('input');
-    inp.type='file';inp.accept='image/*,video/mp4,video/webm';
-    inp.onchange=e=>{
-      const f=e.target.files[0];if(!f)return;
-      if(f.size>6*1024*1024){alert('Max 6MB');return;}
-      const r=new FileReader();
-      r.onload=ev=>{try{localStorage.setItem(key,ev.target.result)}catch(ex){}window.location.reload();};
-      r.readAsDataURL(f);
-    };
-    inp.click();
-  };
   return(
     <section style={{position:'relative',height:'55vh',minHeight:380,overflow:'hidden',
       display:'flex',alignItems:'flex-end',padding:'0 clamp(14px,6vw,96px) clamp(36px,5vw,64px)'}}>
-      <RosaliImg label={imgLabel} h="100%" noUpload={false}
+      <RosaliImg label={imgLabel} h="100%"
         style={{position:'absolute',inset:0,height:'100%'}}/>
       <div style={{position:'absolute',inset:0,
         background:'linear-gradient(to top,oklch(9% 0.04 150/0.88) 0%,oklch(9% 0.04 150/0.2) 60%,transparent 100%)'}}/>
@@ -384,15 +348,6 @@ function RosaliPageHero({imgLabel, sup, title, sub}){
         {sub&&<p style={{fontFamily:'var(--font-b)',fontSize:15,color:'oklch(90% 0.015 100)',
           lineHeight:1.7,opacity:.9}}>{sub}</p>}
       </div>
-      {/* Upload button top-right */}
-      <button onClick={triggerUpload} style={{position:'absolute',top:16,right:16,zIndex:10,
-        background:'rgba(0,0,0,0.45)',border:'1px solid rgba(255,255,255,0.35)',
-        color:'white',borderRadius:20,padding:'6px 13px',fontSize:11,
-        fontFamily:'var(--font-b)',cursor:'pointer',display:'flex',alignItems:'center',gap:5,
-        backdropFilter:'blur(8px)',transition:'background .2s'}}
-        onMouseEnter={e=>e.currentTarget.style.background='rgba(0,0,0,0.7)'}
-        onMouseLeave={e=>e.currentTarget.style.background='rgba(0,0,0,0.45)'}
-      >📷 Change Photo</button>
     </section>
   );
 }
@@ -400,7 +355,7 @@ function RosaliPageHero({imgLabel, sup, title, sub}){
 /* ── WA FAB ──────────────────────────────────────────────── */
 function RosaliWaFab(){
   return(
-    <a href="https://wa.me/6287851515500" target="_blank" rel="noopener noreferrer"
+    <a href={waHref()} target="_blank" rel="noopener noreferrer"
       style={{position:'fixed',bottom:26,right:26,zIndex:200,background:'#25D366',
         color:'#fff',borderRadius:'50%',width:52,height:52,
         display:'flex',alignItems:'center',justifyContent:'center',
@@ -413,10 +368,9 @@ function RosaliWaFab(){
   );
 }
 
-/* ── Init helper ─────────────────────────────────────────── */
-/* Theme comes from PHP (DB). localStorage is NOT consulted for theme. */
-function initRosali(defaultTheme='garden', defaultLang='id'){
-  const savedLang = localStorage.getItem('rosali_lang') || defaultLang;
+/* ── Init ────────────────────────────────────────────────── */
+/* Theme & lang are already authoritative server-side. */
+function initRosali(_defaultTheme, _defaultLang){
   if(!document.getElementById('rosali-theme-css')){
     const s = document.createElement('style');
     s.id = 'rosali-theme-css';
@@ -424,27 +378,27 @@ function initRosali(defaultTheme='garden', defaultLang='id'){
     document.head.appendChild(s);
   }
   applyColorOverrides();
-  return { theme: defaultTheme, lang: savedLang };
+  return { theme: R.theme, lang: R.lang };
 }
 
-/* ── Content override helper ─────────────────────────────── */
+/* ── Content override helper — reads from window.ROSALI.content ───── */
 function RC(key, fallback=''){
-  try{ const v=localStorage.getItem('rc_'+key); return(v!==null&&v!=='')?v:fallback; }
-  catch{ return fallback; }
+  const v = R.content?.[key];
+  return (v !== undefined && v !== null && v !== '') ? v : fallback;
 }
 
-/* ── Layout preference helper ────────────────────────────── */
+/* ── Layout preference helper — reads from window.ROSALI.layout ───── */
 function getLayoutPref(key, fallback=''){
-  try{ const v=localStorage.getItem('layout_'+key); return v||fallback; }
-  catch{ return fallback; }
+  const v = R.layout?.[key];
+  return v || fallback;
 }
 
-/* ── Color overrides ─────────────────────────────────────── */
+/* ── Color overrides — read from window.ROSALI.colors and inject CSS */
 function applyColorOverrides(){
   let el=document.getElementById('rosali-color-overrides');
   if(!el){ el=document.createElement('style'); el.id='rosali-color-overrides'; document.head.appendChild(el); }
   try{
-    const all=JSON.parse(localStorage.getItem('rosali_color_overrides')||'{}');
+    const all = R.colors || {};
     let css='';
     Object.entries(all).forEach(([th,vars])=>{
       const entries=Object.entries(vars||{}).filter(([,v])=>v);
@@ -458,5 +412,6 @@ function applyColorOverrides(){
 Object.assign(window, {
   RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel,
   RosaliPageHero, RosaliWaFab, NAV_PAGES, initRosali, useResponsive,
-  getUrlTheme, setUrlTheme, RC, getLayoutPref, applyColorOverrides
+  getUrlTheme, setUrlTheme, RC, getLayoutPref, applyColorOverrides,
+  slotKey,
 });
