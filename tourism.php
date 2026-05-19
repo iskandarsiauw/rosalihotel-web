@@ -22,7 +22,7 @@ $lang  = getActiveLang();
 <script type="text/babel" src="shared.jsx"></script>
 <script type="text/babel">
 const { useState, useEffect } = React;
-const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliPageHero, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme } = window;
+const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliPageHero, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme, RC } = window;
 
 const SPOTS = {
   en:[
@@ -82,7 +82,14 @@ function App(){
   initRosali(theme,lang);
   useEffect(()=>{ localStorage.setItem('rosali_lang',lang); },[lang]);
   const en=lang==='en';
-  const spots=SPOTS[lang];
+  const SPOT_KEYS = ['pasir','ijen','baluran','colonial','meru','market'];
+  const spots = SPOTS[lang].map((s,i)=>({
+    ...s,
+    name: RC('spot_'+SPOT_KEYS[i]+'_name_'+lang, s.name),
+    tag:  RC('spot_'+SPOT_KEYS[i]+'_tag_'+lang,  s.tag),
+    dist: RC('spot_'+SPOT_KEYS[i]+'_dist_'+lang, s.dist),
+    desc: RC('spot_'+SPOT_KEYS[i]+'_desc_'+lang, s.desc),
+  }));
 
   return(
     <div className={`theme-${theme}`} style={{minHeight:'100vh'}}>
@@ -90,10 +97,10 @@ function App(){
 
       <RosaliPageHero
         imgLabel="tourism hero — Ijen blue fire / Baluran savanna / Pasir Putih beach"
-        sup={en?'East Java Tourism':'Wisata Jawa Timur'}
-        title={en?'Explore\nEast Java':'Jelajahi\nJawa Timur'}
-        sub={en?'From Rosali Hotel, East Java\'s finest natural and cultural attractions are at your doorstep.'
-          :'Dari Rosali Hotel, destinasi alam dan budaya terbaik Jawa Timur ada di depan pintu Anda.'}
+        sup={RC('tourism_hero_sup_'+lang, en?'East Java Tourism':'Wisata Jawa Timur')}
+        title={RC('tourism_hero_title_'+lang, en?'Explore\nEast Java':'Jelajahi\nJawa Timur')}
+        sub={RC('tourism_hero_sub_'+lang, en?'From Rosali Hotel, East Java\'s finest natural and cultural attractions are at your doorstep.'
+          :'Dari Rosali Hotel, destinasi alam dan budaya terbaik Jawa Timur ada di depan pintu Anda.')}
       />
 
       {/* DISTANCE STRIP */}

@@ -22,7 +22,7 @@ $lang  = getActiveLang();
 <script type="text/babel" src="shared.jsx"></script>
 <script type="text/babel">
 const { useState, useEffect } = React;
-const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliPageHero, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme } = window;
+const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliPageHero, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme, RC } = window;
 
 const HALLS = {
   en:[
@@ -49,14 +49,19 @@ function App(){
   initRosali(theme,lang);
   useEffect(()=>{ localStorage.setItem('rosali_lang',lang); },[lang]);
   const en=lang==='en';
-  const halls=HALLS[lang];
+  const HALL_KEYS = ['jasmine','tulip','lavender','garden','restaurant'];
+  const halls = HALLS[lang].map((h,i)=>({
+    ...h,
+    name: RC('hall_'+HALL_KEYS[i]+'_name_'+lang, h.name),
+    cap:  RC('hall_'+HALL_KEYS[i]+'_cap_'+lang,  h.cap),
+  }));
 
-  const msgMeeting = en
-    ?'Hello, I would like to inquire about meeting room packages at Rosali Hotel.'
-    :'Halo, saya ingin menanyakan paket ruang rapat di Rosali Hotel.';
-  const msgWedding = en
-    ?'Hello, I would like to inquire about wedding packages at Rosali Hotel.'
-    :'Halo, saya ingin menanyakan paket pernikahan di Rosali Hotel.';
+  const msgMeeting = RC('events_msg_meeting_'+lang,
+    en?'Hello, I would like to inquire about meeting room packages at Rosali Hotel.'
+      :'Halo, saya ingin menanyakan paket ruang rapat di Rosali Hotel.');
+  const msgWedding = RC('events_msg_wedding_'+lang,
+    en?'Hello, I would like to inquire about wedding packages at Rosali Hotel.'
+      :'Halo, saya ingin menanyakan paket pernikahan di Rosali Hotel.');
 
   return(
     <div className={`theme-${theme}`} style={{minHeight:'100vh'}}>
@@ -64,16 +69,16 @@ function App(){
 
       <RosaliPageHero
         imgLabel="events hero — dream garden wedding / meeting setup aerial"
-        sup={en?'Events & Venues':'Acara & Venue'}
-        title={en?'Host Your\nEvent Here':'Gelar Acara\nAnda di Sini'}
-        sub={en?'From corporate meetings to dream weddings — beautifully hosted with modern AV and full catering.'
-          :'Dari rapat bisnis hingga pernikahan impian — digelar dengan indah, AV modern, dan katering lengkap.'}
+        sup={RC('events_hero_sup_'+lang, en?'Events & Venues':'Acara & Venue')}
+        title={RC('events_hero_title_'+lang, en?'Host Your\nEvent Here':'Gelar Acara\nAnda di Sini')}
+        sub={RC('events_hero_sub_'+lang, en?'From corporate meetings to dream weddings — beautifully hosted with modern AV and full catering.'
+          :'Dari rapat bisnis hingga pernikahan impian — digelar dengan indah, AV modern, dan katering lengkap.')}
       />
 
       {/* TYPE TABS */}
       <section style={{background:'var(--bg)',padding:'clamp(48px,6vw,88px) clamp(20px,6vw,96px)'}}>
         <div style={{display:'flex',gap:4,marginBottom:48,justifyContent:'center'}}>
-          {[['meeting',en?'Meetings & Seminars':'Rapat & Seminar'],['wedding',en?'Weddings & Parties':'Pernikahan & Pesta']].map(([k,l])=>(
+          {[['meeting',RC('events_tab_meeting_'+lang,en?'Meetings & Seminars':'Rapat & Seminar')],['wedding',RC('events_tab_wedding_'+lang,en?'Weddings & Parties':'Pernikahan & Pesta')]].map(([k,l])=>(
             <button key={k} onClick={()=>setTab(k)} style={{
               background:tab===k?'var(--accent)':'var(--bg2)',
               color:tab===k?'var(--bg)':'var(--fg)',border:'none',

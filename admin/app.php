@@ -158,14 +158,269 @@ const CONTENT_FIELDS = [
     {key:'cafe_hours_id', label:'Café Hours (ID)'},
   ]},
   {id:'home', label:'Home', fields:[
-    {key:'hero_title_en', label:'Hero Title (EN)',    multi:true, hint:'Use \\n for line breaks'},
-    {key:'hero_title_id', label:'Hero Title (ID)',    multi:true},
-    {key:'hero_sub_en',   label:'Hero Subtitle (EN)', multi:true},
-    {key:'hero_sub_id',   label:'Hero Subtitle (ID)', multi:true},
-    {key:'about_title_en',label:'About Title (EN)'},
-    {key:'about_title_id',label:'About Title (ID)'},
-    {key:'about_body_en', label:'About Body (EN)',    multi:true},
-    {key:'about_body_id', label:'About Body (ID)',    multi:true},
+    /* Hero */
+    {key:'hero_sup_en',          label:'Hero Tagline (EN)',          hint:'Location line above title, e.g. "Situbondo · East Java · Indonesia"'},
+    {key:'hero_sup_id',          label:'Hero Tagline (ID)'},
+    {key:'hero_title_en',        label:'Hero Title (EN)',            multi:true, hint:'Use \\n for line breaks'},
+    {key:'hero_title_id',        label:'Hero Title (ID)',            multi:true},
+    {key:'hero_sub_en',          label:'Hero Subtitle (EN)',         multi:true},
+    {key:'hero_sub_id',          label:'Hero Subtitle (ID)',         multi:true},
+    {key:'hero_cta_en',          label:'Hero CTA Button (EN)',       hint:'e.g. Book via WhatsApp'},
+    {key:'hero_cta_id',          label:'Hero CTA Button (ID)'},
+    /* About */
+    {key:'about_label_en',       label:'About Section Label (EN)',   hint:'Small label above title, e.g. "Our Story"'},
+    {key:'about_label_id',       label:'About Section Label (ID)'},
+    {key:'about_title_en',       label:'About Title (EN)'},
+    {key:'about_title_id',       label:'About Title (ID)'},
+    {key:'about_body_en',        label:'About Body (EN)',            multi:true},
+    {key:'about_body_id',        label:'About Body (ID)',            multi:true},
+    {key:'about_chips_en',       label:'About Amenity Chips (EN)',   hint:'Comma-separated: 24-Hour Reception, Tropical Gardens, ...'},
+    {key:'about_chips_id',       label:'About Amenity Chips (ID)',   hint:'Comma-separated'},
+    /* Rooms section on home page */
+    {key:'home_rooms_label_en',  label:'Rooms Section Label (EN)',   hint:'e.g. "Rooms & Villas"'},
+    {key:'home_rooms_label_id',  label:'Rooms Section Label (ID)'},
+    {key:'home_rooms_title_en',  label:'Rooms Section Title (EN)'},
+    {key:'home_rooms_title_id',  label:'Rooms Section Title (ID)'},
+    {key:'home_rooms_sub_en',    label:'Rooms Section Subtitle (EN)'},
+    {key:'home_rooms_sub_id',    label:'Rooms Section Subtitle (ID)'},
+    {key:'home_rooms_cta_en',    label:'Rooms CTA Button (EN)',      hint:'e.g. See All Rooms'},
+    {key:'home_rooms_cta_id',    label:'Rooms CTA Button (ID)'},
+    /* Café section on home page */
+    {key:'home_cafe_label_en',   label:'Café Section Label (EN)'},
+    {key:'home_cafe_label_id',   label:'Café Section Label (ID)'},
+    {key:'home_cafe_title_en',   label:'Café Section Title (EN)',    multi:true},
+    {key:'home_cafe_title_id',   label:'Café Section Title (ID)',    multi:true},
+    {key:'home_cafe_sub_en',     label:'Café Section Subtitle (EN)'},
+    {key:'home_cafe_sub_id',     label:'Café Section Subtitle (ID)'},
+    {key:'home_cafe_cta_en',     label:'Café CTA Button (EN)'},
+    {key:'home_cafe_cta_id',     label:'Café CTA Button (ID)'},
+    /* Events section on home page */
+    {key:'home_events_label_en', label:'Events Section Label (EN)'},
+    {key:'home_events_label_id', label:'Events Section Label (ID)'},
+    {key:'home_events_title_en', label:'Events Section Title (EN)',  multi:true},
+    {key:'home_events_title_id', label:'Events Section Title (ID)',  multi:true},
+    {key:'home_events_sub_en',   label:'Events Section Subtitle (EN)'},
+    {key:'home_events_sub_id',   label:'Events Section Subtitle (ID)'},
+    {key:'home_events_cta_en',   label:'Events CTA Button (EN)'},
+    {key:'home_events_cta_id',   label:'Events CTA Button (ID)'},
+    /* Tourism section on home page */
+    {key:'home_tourism_label_en',label:'Tourism Section Label (EN)'},
+    {key:'home_tourism_label_id',label:'Tourism Section Label (ID)'},
+    {key:'home_tourism_title_en',label:'Tourism Section Title (EN)'},
+    {key:'home_tourism_title_id',label:'Tourism Section Title (ID)'},
+    {key:'home_tourism_sub_en',  label:'Tourism Section Subtitle (EN)'},
+    {key:'home_tourism_sub_id',  label:'Tourism Section Subtitle (ID)'},
+    {key:'home_tourism_cta_en',  label:'Tourism CTA Button (EN)'},
+    {key:'home_tourism_cta_id',  label:'Tourism CTA Button (ID)'},
+    /* Contact strip */
+    {key:'home_contact_cta_en',  label:'Contact CTA Button (EN)',    hint:'e.g. Get in Touch'},
+    {key:'home_contact_cta_id',  label:'Contact CTA Button (ID)'},
+  ]},
+  {id:'rooms', label:'Rooms', fields:[
+    /* Page hero */
+    {key:'rooms_hero_sup_en',        label:'Page Tagline (EN)',              hint:'e.g. Accommodation'},
+    {key:'rooms_hero_sup_id',        label:'Page Tagline (ID)'},
+    {key:'rooms_hero_title_en',      label:'Page Title (EN)',                multi:true},
+    {key:'rooms_hero_title_id',      label:'Page Title (ID)',                multi:true},
+    {key:'rooms_hero_sub_en',        label:'Page Subtitle (EN)'},
+    {key:'rooms_hero_sub_id',        label:'Page Subtitle (ID)'},
+    /* Room: The Wooden House */
+    {key:'room_wooden_name_en',      label:'Wooden House — Name (EN)',       hint:'Default: The Wooden House'},
+    {key:'room_wooden_name_id',      label:'Wooden House — Name (ID)'},
+    {key:'room_wooden_desc_en',      label:'Wooden House — Description (EN)',multi:true},
+    {key:'room_wooden_desc_id',      label:'Wooden House — Description (ID)',multi:true},
+    /* Room: The Orientals */
+    {key:'room_oriental_name_en',    label:'Orientals — Name (EN)',          hint:'Default: The Orientals'},
+    {key:'room_oriental_name_id',    label:'Orientals — Name (ID)'},
+    {key:'room_oriental_desc_en',    label:'Orientals — Description (EN)',   multi:true},
+    {key:'room_oriental_desc_id',    label:'Orientals — Description (ID)',   multi:true},
+    /* Room: The VIPs */
+    {key:'room_vip_name_en',         label:'VIPs — Name (EN)',               hint:'Default: The VIPs'},
+    {key:'room_vip_name_id',         label:'VIPs — Name (ID)'},
+    {key:'room_vip_desc_en',         label:'VIPs — Description (EN)',        multi:true},
+    {key:'room_vip_desc_id',         label:'VIPs — Description (ID)',        multi:true},
+    /* Room: The Superiors */
+    {key:'room_superior_name_en',    label:'Superiors — Name (EN)',          hint:'Default: The Superiors'},
+    {key:'room_superior_name_id',    label:'Superiors — Name (ID)'},
+    {key:'room_superior_desc_en',    label:'Superiors — Description (EN)',   multi:true},
+    {key:'room_superior_desc_id',    label:'Superiors — Description (ID)',   multi:true},
+    /* Room: Standard */
+    {key:'room_standard_name_en',    label:'Standard — Name (EN)',           hint:'Default: Standard Rooms'},
+    {key:'room_standard_name_id',    label:'Standard — Name (ID)'},
+    {key:'room_standard_desc_en',    label:'Standard — Description (EN)',    multi:true},
+    {key:'room_standard_desc_id',    label:'Standard — Description (ID)',    multi:true},
+    /* Misc labels */
+    {key:'rooms_includes_label_en',  label:'"Room Includes" Label (EN)',     hint:'Default: Room Includes'},
+    {key:'rooms_includes_label_id',  label:'"Room Includes" Label (ID)',     hint:'Default: Fasilitas Kamar'},
+    {key:'rooms_rate_title_en',      label:'Rate Box Title (EN)',            hint:'Default: Best Rate — Contact Us'},
+    {key:'rooms_rate_title_id',      label:'Rate Box Title (ID)'},
+    {key:'rooms_rate_body_en',       label:'Rate Box Body (EN)',             multi:true},
+    {key:'rooms_rate_body_id',       label:'Rate Box Body (ID)',             multi:true},
+    {key:'rooms_cta_btn_en',         label:'CTA Button (EN)',                hint:'Default: Ask About This Room'},
+    {key:'rooms_cta_btn_id',         label:'CTA Button (ID)'},
+  ]},
+  {id:'events', label:'Events', fields:[
+    /* Page hero */
+    {key:'events_hero_sup_en',       label:'Page Tagline (EN)',              hint:'e.g. Events & Venues'},
+    {key:'events_hero_sup_id',       label:'Page Tagline (ID)'},
+    {key:'events_hero_title_en',     label:'Page Title (EN)',                multi:true},
+    {key:'events_hero_title_id',     label:'Page Title (ID)',                multi:true},
+    {key:'events_hero_sub_en',       label:'Page Subtitle (EN)'},
+    {key:'events_hero_sub_id',       label:'Page Subtitle (ID)'},
+    /* Type tabs */
+    {key:'events_tab_meeting_en',    label:'Meetings Tab Label (EN)',        hint:'Default: Meetings & Seminars'},
+    {key:'events_tab_meeting_id',    label:'Meetings Tab Label (ID)'},
+    {key:'events_tab_wedding_en',    label:'Weddings Tab Label (EN)',        hint:'Default: Weddings & Parties'},
+    {key:'events_tab_wedding_id',    label:'Weddings Tab Label (ID)'},
+    /* WhatsApp message templates */
+    {key:'events_msg_meeting_en',    label:'WA Message — Meetings (EN)',     multi:true},
+    {key:'events_msg_meeting_id',    label:'WA Message — Meetings (ID)',     multi:true},
+    {key:'events_msg_wedding_en',    label:'WA Message — Weddings (EN)',     multi:true},
+    {key:'events_msg_wedding_id',    label:'WA Message — Weddings (ID)',     multi:true},
+    /* Hall 1 */
+    {key:'hall_jasmine_name_en',     label:'Hall 1 Name (EN)',               hint:'Default: Jasmine Meeting Room'},
+    {key:'hall_jasmine_name_id',     label:'Hall 1 Name (ID)'},
+    {key:'hall_jasmine_cap_en',      label:'Hall 1 Capacity (EN)',           hint:'Default: 20–40 pax'},
+    {key:'hall_jasmine_cap_id',      label:'Hall 1 Capacity (ID)'},
+    /* Hall 2 */
+    {key:'hall_tulip_name_en',       label:'Hall 2 Name (EN)',               hint:'Default: Tulip Meeting Room'},
+    {key:'hall_tulip_name_id',       label:'Hall 2 Name (ID)'},
+    {key:'hall_tulip_cap_en',        label:'Hall 2 Capacity (EN)',           hint:'Default: 30–60 pax'},
+    {key:'hall_tulip_cap_id',        label:'Hall 2 Capacity (ID)'},
+    /* Hall 3 */
+    {key:'hall_lavender_name_en',    label:'Hall 3 Name (EN)',               hint:'Default: Lavender Meeting Room'},
+    {key:'hall_lavender_name_id',    label:'Hall 3 Name (ID)'},
+    {key:'hall_lavender_cap_en',     label:'Hall 3 Capacity (EN)',           hint:'Default: 40–80 pax'},
+    {key:'hall_lavender_cap_id',     label:'Hall 3 Capacity (ID)'},
+    /* Hall 4 */
+    {key:'hall_garden_name_en',      label:'Hall 4 Name (EN)',               hint:'Default: The Dream Garden'},
+    {key:'hall_garden_name_id',      label:'Hall 4 Name (ID)'},
+    {key:'hall_garden_cap_en',       label:'Hall 4 Capacity (EN)',           hint:'Default: 100–300 pax'},
+    {key:'hall_garden_cap_id',       label:'Hall 4 Capacity (ID)'},
+    /* Hall 5 */
+    {key:'hall_restaurant_name_en',  label:'Hall 5 Name (EN)',               hint:'Default: Main Restaurant Hall'},
+    {key:'hall_restaurant_name_id',  label:'Hall 5 Name (ID)'},
+    {key:'hall_restaurant_cap_en',   label:'Hall 5 Capacity (EN)',           hint:'Default: 50–150 pax'},
+    {key:'hall_restaurant_cap_id',   label:'Hall 5 Capacity (ID)'},
+  ]},
+  {id:'cafe', label:'Café', fields:[
+    /* Page hero */
+    {key:'cafe_hero_sup_en',         label:'Page Tagline (EN)',              hint:'e.g. Rosa De 5 Café'},
+    {key:'cafe_hero_sup_id',         label:'Page Tagline (ID)'},
+    {key:'cafe_hero_title_en',       label:'Page Title (EN)',                multi:true},
+    {key:'cafe_hero_title_id',       label:'Page Title (ID)',                multi:true},
+    {key:'cafe_hero_sub_en',         label:'Page Subtitle (EN)'},
+    {key:'cafe_hero_sub_id',         label:'Page Subtitle (ID)'},
+    {key:'cafe_page_cta_en',         label:'CTA Button (EN)',                hint:'e.g. Order via WhatsApp'},
+    {key:'cafe_page_cta_id',         label:'CTA Button (ID)'},
+    /* Menu category names */
+    {key:'cafe_cat1_name_en',        label:'Category 1 Name (EN)',           hint:'Default: Specialty Coffee'},
+    {key:'cafe_cat1_name_id',        label:'Category 1 Name (ID)'},
+    {key:'cafe_cat2_name_en',        label:'Category 2 Name (EN)',           hint:'Default: Food & Bites'},
+    {key:'cafe_cat2_name_id',        label:'Category 2 Name (ID)'},
+    {key:'cafe_cat3_name_en',        label:'Category 3 Name (EN)',           hint:'Default: Drinks & Juice'},
+    {key:'cafe_cat3_name_id',        label:'Category 3 Name (ID)'},
+  ]},
+  {id:'tourism', label:'Tourism', fields:[
+    /* Page hero */
+    {key:'tourism_hero_sup_en',      label:'Page Tagline (EN)',              hint:'e.g. Explore East Java'},
+    {key:'tourism_hero_sup_id',      label:'Page Tagline (ID)'},
+    {key:'tourism_hero_title_en',    label:'Page Title (EN)',                multi:true},
+    {key:'tourism_hero_title_id',    label:'Page Title (ID)',                multi:true},
+    {key:'tourism_hero_sub_en',      label:'Page Subtitle (EN)'},
+    {key:'tourism_hero_sub_id',      label:'Page Subtitle (ID)'},
+    {key:'tourism_page_cta_en',      label:'CTA Button (EN)',                hint:'e.g. Plan a Trip'},
+    {key:'tourism_page_cta_id',      label:'CTA Button (ID)'},
+    /* Spot 1 — Pasir Putih */
+    {key:'spot_pasir_name_en',       label:'Spot 1 Name (EN)',               hint:'Default: Pasir Putih Beach'},
+    {key:'spot_pasir_name_id',       label:'Spot 1 Name (ID)'},
+    {key:'spot_pasir_tag_en',        label:'Spot 1 Tag (EN)',                hint:'e.g. Beach'},
+    {key:'spot_pasir_tag_id',        label:'Spot 1 Tag (ID)'},
+    {key:'spot_pasir_dist_en',       label:'Spot 1 Distance (EN)',           hint:'e.g. ~15 min drive'},
+    {key:'spot_pasir_dist_id',       label:'Spot 1 Distance (ID)'},
+    {key:'spot_pasir_desc_en',       label:'Spot 1 Description (EN)',        multi:true},
+    {key:'spot_pasir_desc_id',       label:'Spot 1 Description (ID)',        multi:true},
+    /* Spot 2 — Ijen */
+    {key:'spot_ijen_name_en',        label:'Spot 2 Name (EN)',               hint:'Default: Ijen Crater'},
+    {key:'spot_ijen_name_id',        label:'Spot 2 Name (ID)'},
+    {key:'spot_ijen_tag_en',         label:'Spot 2 Tag (EN)'},
+    {key:'spot_ijen_tag_id',         label:'Spot 2 Tag (ID)'},
+    {key:'spot_ijen_dist_en',        label:'Spot 2 Distance (EN)'},
+    {key:'spot_ijen_dist_id',        label:'Spot 2 Distance (ID)'},
+    {key:'spot_ijen_desc_en',        label:'Spot 2 Description (EN)',        multi:true},
+    {key:'spot_ijen_desc_id',        label:'Spot 2 Description (ID)',        multi:true},
+    /* Spot 3 — Baluran */
+    {key:'spot_baluran_name_en',     label:'Spot 3 Name (EN)',               hint:'Default: Baluran National Park'},
+    {key:'spot_baluran_name_id',     label:'Spot 3 Name (ID)'},
+    {key:'spot_baluran_tag_en',      label:'Spot 3 Tag (EN)'},
+    {key:'spot_baluran_tag_id',      label:'Spot 3 Tag (ID)'},
+    {key:'spot_baluran_dist_en',     label:'Spot 3 Distance (EN)'},
+    {key:'spot_baluran_dist_id',     label:'Spot 3 Distance (ID)'},
+    {key:'spot_baluran_desc_en',     label:'Spot 3 Description (EN)',        multi:true},
+    {key:'spot_baluran_desc_id',     label:'Spot 3 Description (ID)',        multi:true},
+    /* Spot 4 — Colonial */
+    {key:'spot_colonial_name_en',    label:'Spot 4 Name (EN)',               hint:'Default: Colonial Heritage Sites'},
+    {key:'spot_colonial_name_id',    label:'Spot 4 Name (ID)'},
+    {key:'spot_colonial_tag_en',     label:'Spot 4 Tag (EN)'},
+    {key:'spot_colonial_tag_id',     label:'Spot 4 Tag (ID)'},
+    {key:'spot_colonial_dist_en',    label:'Spot 4 Distance (EN)'},
+    {key:'spot_colonial_dist_id',    label:'Spot 4 Distance (ID)'},
+    {key:'spot_colonial_desc_en',    label:'Spot 4 Description (EN)',        multi:true},
+    {key:'spot_colonial_desc_id',    label:'Spot 4 Description (ID)',        multi:true},
+    /* Spot 5 — Meru Betiri */
+    {key:'spot_meru_name_en',        label:'Spot 5 Name (EN)',               hint:'Default: Taman Nasional Meru Betiri'},
+    {key:'spot_meru_name_id',        label:'Spot 5 Name (ID)'},
+    {key:'spot_meru_tag_en',         label:'Spot 5 Tag (EN)'},
+    {key:'spot_meru_tag_id',         label:'Spot 5 Tag (ID)'},
+    {key:'spot_meru_dist_en',        label:'Spot 5 Distance (EN)'},
+    {key:'spot_meru_dist_id',        label:'Spot 5 Distance (ID)'},
+    {key:'spot_meru_desc_en',        label:'Spot 5 Description (EN)',        multi:true},
+    {key:'spot_meru_desc_id',        label:'Spot 5 Description (ID)',        multi:true},
+    /* Spot 6 — Markets */
+    {key:'spot_market_name_en',      label:'Spot 6 Name (EN)',               hint:'Default: Local Markets & Batik'},
+    {key:'spot_market_name_id',      label:'Spot 6 Name (ID)'},
+    {key:'spot_market_tag_en',       label:'Spot 6 Tag (EN)'},
+    {key:'spot_market_tag_id',       label:'Spot 6 Tag (ID)'},
+    {key:'spot_market_dist_en',      label:'Spot 6 Distance (EN)'},
+    {key:'spot_market_dist_id',      label:'Spot 6 Distance (ID)'},
+    {key:'spot_market_desc_en',      label:'Spot 6 Description (EN)',        multi:true},
+    {key:'spot_market_desc_id',      label:'Spot 6 Description (ID)',        multi:true},
+  ]},
+  {id:'contact', label:'Contact', fields:[
+    /* Page hero */
+    {key:'contact_hero_sup_en',      label:'Page Tagline (EN)',              hint:'e.g. Contact & Promos'},
+    {key:'contact_hero_sup_id',      label:'Page Tagline (ID)'},
+    {key:'contact_hero_title_en',    label:'Page Title (EN)',                multi:true},
+    {key:'contact_hero_title_id',    label:'Page Title (ID)',                multi:true},
+    {key:'contact_hero_sub_en',      label:'Page Subtitle (EN)'},
+    {key:'contact_hero_sub_id',      label:'Page Subtitle (ID)'},
+    /* Promo 1 */
+    {key:'promo1_title_en',          label:'Promo 1 Title (EN)',             hint:'Default: Weekend Getaway Package'},
+    {key:'promo1_title_id',          label:'Promo 1 Title (ID)'},
+    {key:'promo1_badge_en',          label:'Promo 1 Badge (EN)',             hint:'e.g. Special'},
+    {key:'promo1_badge_id',          label:'Promo 1 Badge (ID)'},
+    {key:'promo1_desc_en',           label:'Promo 1 Description (EN)',       multi:true},
+    {key:'promo1_desc_id',           label:'Promo 1 Description (ID)',       multi:true},
+    {key:'promo1_cta_en',            label:'Promo 1 CTA Button (EN)'},
+    {key:'promo1_cta_id',            label:'Promo 1 CTA Button (ID)'},
+    /* Promo 2 */
+    {key:'promo2_title_en',          label:'Promo 2 Title (EN)',             hint:'Default: Meeting Package (Full Day)'},
+    {key:'promo2_title_id',          label:'Promo 2 Title (ID)'},
+    {key:'promo2_badge_en',          label:'Promo 2 Badge (EN)'},
+    {key:'promo2_badge_id',          label:'Promo 2 Badge (ID)'},
+    {key:'promo2_desc_en',           label:'Promo 2 Description (EN)',       multi:true},
+    {key:'promo2_desc_id',           label:'Promo 2 Description (ID)',       multi:true},
+    {key:'promo2_cta_en',            label:'Promo 2 CTA Button (EN)'},
+    {key:'promo2_cta_id',            label:'Promo 2 CTA Button (ID)'},
+    /* Promo 3 */
+    {key:'promo3_title_en',          label:'Promo 3 Title (EN)',             hint:'Default: Wedding Package'},
+    {key:'promo3_title_id',          label:'Promo 3 Title (ID)'},
+    {key:'promo3_badge_en',          label:'Promo 3 Badge (EN)'},
+    {key:'promo3_badge_id',          label:'Promo 3 Badge (ID)'},
+    {key:'promo3_desc_en',           label:'Promo 3 Description (EN)',       multi:true},
+    {key:'promo3_desc_id',           label:'Promo 3 Description (ID)',       multi:true},
+    {key:'promo3_cta_en',            label:'Promo 3 CTA Button (EN)'},
+    {key:'promo3_cta_id',            label:'Promo 3 CTA Button (ID)'},
   ]},
 ];
 
@@ -738,13 +993,11 @@ function TabContent() {
   const [loading,    setLoading]    = useState(true);
 
   useEffect(() => {
-    const allKeys = CONTENT_FIELDS.flatMap(pg => pg.fields.map(f => f.key));
-    Promise.all(allKeys.map(k => apiGet('rc_' + k).then(v => ({k, v})))).then(results => {
-      const out = {};
-      results.forEach(({k, v}) => { if (v) out[k] = v; });
-      setVals(out);
-      setLoading(false);
-    });
+    /* Single batch request — returns all rc_* settings as {key:value} map */
+    fetch('api/data.php?batch=rc', {credentials:'same-origin'})
+      .then(r => r.json())
+      .then(data => { setVals(data || {}); setLoading(false); })
+      .catch(() => setLoading(false));
   }, []);
 
   const doSave = async () => {

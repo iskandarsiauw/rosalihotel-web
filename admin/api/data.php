@@ -12,6 +12,17 @@ if (empty($_SESSION['admin_id'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    /* ?batch=rc — return all rc_* settings as {key: value} map */
+    if (isset($_GET['batch']) && $_GET['batch'] === 'rc') {
+        global $pdo;
+        $out = [];
+        try {
+            $stmt = $pdo->query("SELECT `key`, `value` FROM settings WHERE `key` LIKE 'rc_%'");
+            foreach ($stmt->fetchAll() as $r) $out[substr($r['key'], 3)] = $r['value'];
+        } catch (PDOException) {}
+        echo json_encode($out);
+        exit;
+    }
     $key = $_GET['key'] ?? null;
     if (!$key) { echo json_encode(['error' => 'no key']); exit; }
     echo json_encode(['value' => getSetting($key)]);

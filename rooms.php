@@ -37,7 +37,7 @@ if ($splatEnabled) {
 <?php endif; ?>
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
-const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliPageHero, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme } = window;
+const { RosaliImg, RosaliNav, RosaliFooter, RosaliBtn, RosaliLabel, RosaliPageHero, RosaliWaFab, initRosali, useResponsive, getUrlTheme, setUrlTheme, RC } = window;
 const ROOM_SPLATS = <?= json_encode($roomSplats) ?>;
 const SPLAT_ENABLED = <?= $splatEnabled ? 'true' : 'false' ?>;
 
@@ -108,9 +108,11 @@ function App(){
   const room = ROOMS[active];
   const en = lang==='en';
 
+  const roomName = RC('room_'+room.key+'_name_'+lang, en?room.nameEn:room.nameId);
+  const roomDesc = RC('room_'+room.key+'_desc_'+lang, en?room.descEn:room.descId);
   const ctaMsg = en
-    ? `Hello, I'm interested in ${room.nameEn}. Could you please share availability and rates?`
-    : `Halo, saya tertarik dengan ${room.nameId}. Bisakah Anda berbagi ketersediaan dan harga?`;
+    ? `Hello, I'm interested in ${roomName}. Could you please share availability and rates?`
+    : `Halo, saya tertarik dengan ${roomName}. Bisakah Anda berbagi ketersediaan dan harga?`;
 
   return(
     <div className={`theme-${theme}`} style={{minHeight:'100vh'}}>
@@ -118,9 +120,9 @@ function App(){
 
       <RosaliPageHero
         imgLabel="rooms hero — garden villa exterior / bungalow cluster aerial"
-        sup={en?"Accommodation":"Akomodasi"}
-        title={en?"Rooms &\nVillas":"Kamar &\nVilla"}
-        sub={en?"Five unique categories across lush garden clusters. Contact us for availability & rates.":"Lima kategori unik di kluster taman yang rimbun. Hubungi kami untuk ketersediaan & harga."}
+        sup={RC('rooms_hero_sup_'+lang, en?"Accommodation":"Akomodasi")}
+        title={RC('rooms_hero_title_'+lang, en?"Rooms &\nVillas":"Kamar &\nVilla")}
+        sub={RC('rooms_hero_sub_'+lang, en?"Five unique categories across lush garden clusters. Contact us for availability & rates.":"Lima kategori unik di kluster taman yang rimbun. Hubungi kami untuk ketersediaan & harga.")}
       />
 
       {/* ROOM BROWSER */}
@@ -134,7 +136,7 @@ function App(){
               border:'none',padding:'10px 18px',borderRadius:2,cursor:'pointer',
               fontFamily:'var(--font-b)',fontSize:12,fontWeight:i===active?600:400,
               transition:'all .2s'}}>
-              {en?r.nameEn:r.nameId}
+              {RC('room_'+r.key+'_name_'+lang, en?r.nameEn:r.nameId)}
             </button>
           ))}
         </div>
@@ -158,15 +160,15 @@ function App(){
             <span style={{fontSize:10,letterSpacing:'0.14em',textTransform:'uppercase',
               color:'var(--accent)',fontFamily:'var(--font-b)',fontWeight:600}}>{room.tag}</span>
             <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(24px,3vw,40px)',
-              color:'var(--fg)',margin:'10px 0 16px'}}>{en?room.nameEn:room.nameId}</h2>
+              color:'var(--fg)',margin:'10px 0 16px'}}>{roomName}</h2>
             <p style={{fontFamily:'var(--font-b)',fontSize:15,color:'var(--fg-muted)',
-              lineHeight:1.8,marginBottom:28}}>{en?room.descEn:room.descId}</p>
+              lineHeight:1.8,marginBottom:28}}>{roomDesc}</p>
 
             {/* Amenities */}
             <div style={{marginBottom:32}}>
               <div style={{fontFamily:'var(--font-b)',fontSize:11,letterSpacing:'0.12em',
                 textTransform:'uppercase',color:'var(--accent)',marginBottom:12}}>
-                {en?'Room Includes':'Fasilitas Kamar'}
+                {RC('rooms_includes_label_'+lang, en?'Room Includes':'Fasilitas Kamar')}
               </div>
               <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
                 {room.amenities.map(a=>(
@@ -181,15 +183,15 @@ function App(){
             <div style={{background:'var(--bg2)',border:'1px solid var(--border)',
               borderRadius:4,padding:'20px 22px',marginBottom:24}}>
               <div style={{fontFamily:'var(--font-d)',fontSize:20,color:'var(--fg)',marginBottom:6}}>
-                {en?'Best Rate — Contact Us':'Harga Terbaik — Hubungi Kami'}
+                {RC('rooms_rate_title_'+lang, en?'Best Rate — Contact Us':'Harga Terbaik — Hubungi Kami')}
               </div>
               <p style={{fontFamily:'var(--font-b)',fontSize:13,color:'var(--fg-muted)',lineHeight:1.6}}>
-                {en?'We offer personalized rates based on duration, season & group size. Chat with us for the best deal.':'Kami menawarkan harga personal berdasarkan durasi, musim & ukuran grup. Chat kami untuk penawaran terbaik.'}
+                {RC('rooms_rate_body_'+lang, en?'We offer personalized rates based on duration, season & group size. Chat with us for the best deal.':'Kami menawarkan harga personal berdasarkan durasi, musim & ukuran grup. Chat kami untuk penawaran terbaik.')}
               </p>
             </div>
 
             <RosaliBtn
-              text={en?'Ask About This Room':'Tanya Tentang Kamar Ini'}
+              text={RC('rooms_cta_btn_'+lang, en?'Ask About This Room':'Tanya Tentang Kamar Ini')}
               href={`https://wa.me/6287851515500?text=${encodeURIComponent(ctaMsg)}`}
               style={{width:'100%',justifyContent:'center',padding:'14px'}}
             />
