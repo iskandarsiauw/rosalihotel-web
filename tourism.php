@@ -73,12 +73,12 @@ const TAG_COLORS = {
 };
 
 function App(){
-  const [theme]=useState(()=>getUrlTheme()||localStorage.getItem('rosali_theme')||'rosa');
+  const [theme]=useState('<?= $theme ?>');
   const [lang,setLang]=useState(()=>localStorage.getItem('rosali_lang')||'id');
   const [open,setOpen]=useState(null);
   const { isMobile } = useResponsive();
   initRosali(theme,lang);
-  useEffect(()=>{ setUrlTheme(theme); },[theme]);
+  useEffect(()=>{ localStorage.setItem('rosali_lang',lang); },[lang]);
   const en=lang==='en';
   const spots=SPOTS[lang];
 

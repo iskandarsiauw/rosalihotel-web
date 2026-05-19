@@ -7,13 +7,8 @@ const { useState, useEffect, useRef } = React;
 function getUrlTheme(){
   try{ return new URLSearchParams(window.location.search).get('theme'); }catch{ return null; }
 }
-function setUrlTheme(t){
-  try{
-    const url=new URL(window.location);
-    url.searchParams.set('theme',t);
-    window.history.replaceState({},'',url);
-  }catch{}
-}
+/* setUrlTheme: no-op — theme is managed server-side via admin panel */
+function setUrlTheme(_t){ /* no-op */ }
 
 /* ── Responsive hook ─────────────────────────────────────── */
 function useResponsive(){
@@ -111,14 +106,8 @@ const NAV_PAGES = {
   ]
 };
 
-function navHref(href, theme){
-  if(!theme) return href;
-  try{
-    const url = new URL(href, window.location.href);
-    url.searchParams.set('theme', theme);
-    return url.pathname + url.search;
-  }catch{ return href; }
-}
+/* theme no longer travels through URLs — DB is the source of truth */
+function navHref(href, _theme){ return href; }
 
 /* ── Read pages from admin (with hide/show + reorder) ── */
 function getActivePages(lang){
@@ -425,10 +414,9 @@ function RosaliWaFab(){
 }
 
 /* ── Init helper ─────────────────────────────────────────── */
+/* Theme comes from PHP (DB). localStorage is NOT consulted for theme. */
 function initRosali(defaultTheme='garden', defaultLang='id'){
-  const saved = localStorage.getItem('rosali_theme') || defaultTheme;
   const savedLang = localStorage.getItem('rosali_lang') || defaultLang;
-  // inject theme CSS once
   if(!document.getElementById('rosali-theme-css')){
     const s = document.createElement('style');
     s.id = 'rosali-theme-css';
@@ -436,7 +424,7 @@ function initRosali(defaultTheme='garden', defaultLang='id'){
     document.head.appendChild(s);
   }
   applyColorOverrides();
-  return { theme: saved, lang: savedLang };
+  return { theme: defaultTheme, lang: savedLang };
 }
 
 /* ── Content override helper ─────────────────────────────── */

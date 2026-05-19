@@ -46,13 +46,13 @@ const ROOMS = [
 ];
 
 function App(){
-  const [theme,setTheme]=useState(()=>getUrlTheme()||localStorage.getItem('rosali_theme')||'rosa');
+  const [theme,setTheme]=useState('<?= $theme ?>');
   const [lang,setLang]=useState(()=>localStorage.getItem('rosali_lang')||'id');
   const [active,setActive]=useState(0);
   const { isMobile, isTablet } = useResponsive();
   initRosali(theme,lang);
 
-  useEffect(()=>{ localStorage.setItem('rosali_lang',lang); setUrlTheme(theme); },[lang]);
+  useEffect(()=>{ localStorage.setItem('rosali_lang',lang); },[lang]);
 
   const room = ROOMS[active];
   const en = lang==='en';

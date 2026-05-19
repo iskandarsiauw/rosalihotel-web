@@ -48,12 +48,12 @@ const PROMOS = {
 };
 
 function App(){
-  const [theme]=useState(()=>getUrlTheme()||localStorage.getItem('rosali_theme')||'rosa');
+  const [theme]=useState('<?= $theme ?>');
   const [lang,setLang]=useState(()=>localStorage.getItem('rosali_lang')||'id');
   const [form,setForm]=useState({name:'',phone:'',type:'stay',msg:''});
   const { isMobile } = useResponsive();
   initRosali(theme,lang);
-  useEffect(()=>{ setUrlTheme(theme); },[theme]);
+  useEffect(()=>{ localStorage.setItem('rosali_lang',lang); },[lang]);
   const en=lang==='en';
   const promos=PROMOS[lang];
 

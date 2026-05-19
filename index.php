@@ -67,13 +67,13 @@ const C = {
 };
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "theme": "rosa",
-  "lang": "en"
+  "theme": "<?= $theme ?>",
+  "lang": "<?= $lang ?>"
 }/*EDITMODE-END*/;
 
 function App(){
   const init = initRosali(TWEAK_DEFAULTS.theme, TWEAK_DEFAULTS.lang);
-  const [theme,setTheme]=useState(()=>getUrlTheme()||localStorage.getItem('rosali_theme')||TWEAK_DEFAULTS.theme);
+  const [theme,setTheme]=useState(TWEAK_DEFAULTS.theme);
   const [lang,setLang]=useState(()=>localStorage.getItem('rosali_lang')||TWEAK_DEFAULTS.lang);
   const [tweaks,setTweaks]=useState(false);
   const { isMobile, isTablet } = useResponsive();
@@ -84,10 +84,8 @@ function App(){
   const roomsCols   = getLayoutPref('home_rooms_cols','3');
 
   useEffect(()=>{
-    localStorage.setItem('rosali_theme',theme);
     localStorage.setItem('rosali_lang',lang);
-    setUrlTheme(theme);
-  },[theme,lang]);
+  },[lang]);
 
   useEffect(()=>{
     const fn=e=>{
@@ -100,7 +98,7 @@ function App(){
   },[]);
 
   const setThemeAndSave = t=>{
-    setTheme(t); localStorage.setItem('rosali_theme',t); setUrlTheme(t);
+    setTheme(t);
     window.parent.postMessage({type:'__edit_mode_set_keys',edits:{theme:t}},'*');
   };
   const setLangAndSave = l=>{
