@@ -1,3 +1,9 @@
 .claude/worktrees/
 .claude/settings.local.json
-uploads/media/
+uploads/sess_*
+uploads/media/images/*
+!uploads/media/images/index.php
+uploads/media/videos/*
+!uploads/media/videos/index.php
+uploads/splats/*
+!uploads/splats/index.php
