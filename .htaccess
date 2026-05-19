@@ -1,10 +1,5 @@
 Options -Indexes
 
-# Force PHP 8.5 (EasyApache 4 / Rumahweb)
-<FilesMatch "\.php$">
-    SetHandler application/x-httpd-ea-php85
-</FilesMatch>
-
 # Block direct access to includes/
 <FilesMatch "\.(sql)$">
   Require all denied
