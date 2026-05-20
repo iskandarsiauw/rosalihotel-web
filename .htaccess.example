@@ -24,6 +24,7 @@ Options -Indexes
   RewriteEngine On
   RewriteRule ^includes/ - [F,L]
   RewriteRule ^sitemap\.xml$ sitemap.xml.php [L]
+  RewriteRule ^robots\.txt$  robots.txt.php  [L]
 </IfModule>
 
 ## On cPanel, leave this block intact (cPanel writes it automatically):

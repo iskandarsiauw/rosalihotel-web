@@ -123,17 +123,25 @@ function seoFor(string $pageId, ?string $lang = null): array {
     ];
 }
 
+/* Site-wide noindex flag — when ON, every page on this install forces a
+   noindex/nofollow meta regardless of per-page setting. Intended for staging
+   environments like testing.rosalihotel.id. */
+function seoNoindexSite(): bool {
+    return getSetting('seo_noindex_site', '0') === '1';
+}
+
 function seoMeta(string $pageId): void {
     $s = seoFor($pageId);
     $hotelName = getSetting('rc_hotel_name', 'Rosali Hotel');
     $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+    $noindex = $s['noindex'] || seoNoindexSite();
 
     echo "<title>" . $h($s['title']) . "</title>\n";
     echo '<meta name="description" content="' . $h($s['description']) . '"/>' . "\n";
     if ($s['keywords'] !== '') {
         echo '<meta name="keywords" content="' . $h($s['keywords']) . '"/>' . "\n";
     }
-    if ($s['noindex']) {
+    if ($noindex) {
         echo '<meta name="robots" content="noindex, nofollow"/>' . "\n";
     } else {
         echo '<meta name="robots" content="index, follow"/>' . "\n";

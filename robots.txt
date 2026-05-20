@@ -1,9 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /admin/
-Disallow: /admin
-Disallow: /includes/
-Disallow: /uploads/splats/
-Disallow: /*.sql$
-
-Sitemap: https://www.rosalihotel.id/sitemap.xml

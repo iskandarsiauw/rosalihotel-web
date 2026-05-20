@@ -1307,12 +1307,14 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
   const [stats,      setStats]      = useState(null);
   const [busy,       setBusy]       = useState(false);
   const [geoLocal,   setGeoLocal]   = useState(false);
+  const [noindex,    setNoindex]    = useState(false);
 
   const refreshStats = () => fetch('api/settings-stats.php').then(r => r.json()).then(setStats).catch(() => {});
 
   useEffect(() => {
     refreshStats();
     apiGet('geo_local_enabled').then(v => setGeoLocal(v === '1'));
+    apiGet('seo_noindex_site').then(v => setNoindex(v === '1'));
   }, []);
 
   const clearAll = async () => {
@@ -1343,6 +1345,12 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
     const next = !geoLocal;
     setGeoLocal(next);
     await apiSet('geo_local_enabled', next ? '1' : '0');
+  };
+
+  const toggleNoindex = async () => {
+    const next = !noindex;
+    setNoindex(next);
+    await apiSet('seo_noindex_site', next ? '1' : '0');
   };
 
   const fmtBytes = b => {
@@ -1393,6 +1401,32 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
           position:'relative', cursor:'pointer', transition:'background .2s'
         }}>
           <span style={{position:'absolute', top:3, left: geoLocal ? 28 : 3,
+            width:22, height:22, borderRadius:'50%', background:'white',
+            transition:'left .2s'}}/>
+        </button>
+      </div>
+
+      {/* Site-wide noindex (staging) */}
+      <div style={{
+        background: noindex ? 'oklch(60% 0.20 25 / 0.07)' : T.bg2,
+        border: `1px solid ${noindex ? 'oklch(60% 0.20 25 / 0.4)' : T.border}`,
+        borderRadius:8, padding:20, marginBottom:16,
+        display:'flex', justifyContent:'space-between', alignItems:'center', gap:16, flexWrap:'wrap'
+      }}>
+        <div>
+          <div style={{fontSize:14, fontWeight:600, color: noindex ? T.red : T.fg, marginBottom:4}}>
+            🚫 Hide entire site from Google {noindex && '— ACTIVE'}
+          </div>
+          <p style={{fontSize:12, color:T.muted, lineHeight:1.6, maxWidth:560}}>
+            Staging / testing flag. When ON, every page emits <code style={{color:T.fg}}>noindex, nofollow</code> and the site's <code style={{color:T.fg}}>robots.txt</code> tells all crawlers to stay out. Use this on testing.rosalihotel.id so it never competes with the production site in Google. <strong style={{color: noindex ? T.red : T.fg}}>Turn OFF in production</strong> — otherwise Google will not index your real site.
+          </p>
+        </div>
+        <button onClick={toggleNoindex} style={{
+          width:54, height:28, borderRadius:14, border:'none',
+          background: noindex ? T.red : T.bg3,
+          position:'relative', cursor:'pointer', transition:'background .2s'
+        }}>
+          <span style={{position:'absolute', top:3, left: noindex ? 28 : 3,
             width:22, height:22, borderRadius:'50%', background:'white',
             transition:'left .2s'}}/>
         </button>
