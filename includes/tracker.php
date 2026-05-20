@@ -91,6 +91,14 @@
         );
         $sumStmt->execute([$page, $isFirstToday]);
 
+        // --- Opportunistic 2-year retention prune (≈1% of requests) ---
+        // Keeps the analytics tables bounded without needing a cron job.
+        if (random_int(1, 100) === 1) {
+            $pdo->exec("DELETE FROM visitor_logs           WHERE visit_date < DATE_SUB(CURDATE(), INTERVAL 730 DAY)");
+            $pdo->exec("DELETE FROM visitor_daily_summary  WHERE visit_date < DATE_SUB(CURDATE(), INTERVAL 730 DAY)");
+            $pdo->exec("DELETE FROM visitor_ip_cache       WHERE cached_at  < DATE_SUB(NOW(),    INTERVAL 30  DAY)");
+        }
+
     } catch (Throwable $e) {
         // Silent: tracking must never affect the page.
     }
