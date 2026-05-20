@@ -13,4 +13,5 @@ Options -Indexes
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteRule ^includes/ - [F,L]
+  RewriteRule ^sitemap\.xml$ sitemap.xml.php [L]
 </IfModule>
