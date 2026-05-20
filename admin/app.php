@@ -465,8 +465,9 @@ function SaveBtn({onSave, saved}) {
 /* ── Sidebar ── */
 function Sidebar({tab, setTab, pageCount}) {
   const items = [
-    {id:'overview', icon:'◈', label:'Overview'},
-    {id:'pages',    icon:'⊞', label:'Pages', badge: pageCount},
+    {id:'overview',  icon:'◈', label:'Overview'},
+    {id:'analytics', icon:'⌁', label:'Analytics'},
+    {id:'pages',     icon:'⊞', label:'Pages', badge: pageCount},
     {id:'media',    icon:'⬤', label:'Media'},
     {id:'colors',   icon:'◉', label:'Colors'},
     {id:'content',  icon:'≡', label:'Content'},
@@ -1230,6 +1231,330 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
   );
 }
 
+/* ── Analytics ── */
+const COUNTRY_FLAGS = {
+  'Indonesia':'🇮🇩','Singapore':'🇸🇬','Malaysia':'🇲🇾','Australia':'🇦🇺','United States':'🇺🇸',
+  'United Kingdom':'🇬🇧','Japan':'🇯🇵','South Korea':'🇰🇷','China':'🇨🇳','Germany':'🇩🇪',
+  'France':'🇫🇷','Netherlands':'🇳🇱','India':'🇮🇳','Thailand':'🇹🇭','Vietnam':'🇻🇳',
+  'Philippines':'🇵🇭','Hong Kong':'🇭🇰','Taiwan':'🇹🇼','Italy':'🇮🇹','Spain':'🇪🇸',
+  'Canada':'🇨🇦','Saudi Arabia':'🇸🇦','United Arab Emirates':'🇦🇪','Russia':'🇷🇺','Brazil':'🇧🇷',
+};
+
+function aFetch(qs) {
+  return fetch('api/analytics.php?' + qs).then(r => r.json()).catch(() => null);
+}
+
+function Skeleton({h}) {
+  return <div style={{height:h||14, background:T.bg3, borderRadius:4, opacity:.5}}/>;
+}
+
+function LineChart({data, height}) {
+  if (!data || data.length === 0) return null;
+  const W = 800, H = height || 200, pad = {l:38, r:12, t:12, b:24};
+  const max = Math.max(1, ...data.map(d => d.visits));
+  const stepX = (W - pad.l - pad.r) / Math.max(1, data.length - 1);
+  const yFor = v => pad.t + (H - pad.t - pad.b) * (1 - v / max);
+  const xFor = i => pad.l + i * stepX;
+  const path = data.map((d, i) => `${i ? 'L' : 'M'}${xFor(i).toFixed(1)},${yFor(d.visits).toFixed(1)}`).join(' ');
+  const area = `${path} L${xFor(data.length-1).toFixed(1)},${(H-pad.b).toFixed(1)} L${xFor(0).toFixed(1)},${(H-pad.b).toFixed(1)} Z`;
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(g => yFor(max * g));
+  const labelEvery = Math.ceil(data.length / 8);
+  const fmtDate = s => { const [, m, d] = s.split('-'); return `${parseInt(d)}/${parseInt(m)}`; };
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%', height:'auto', display:'block'}}>
+      {gridLines.map((y, i) => (
+        <line key={i} x1={pad.l} y1={y} x2={W-pad.r} y2={y}
+          stroke="oklch(30% 0.022 250)" strokeWidth="1" strokeDasharray="2,3"/>
+      ))}
+      {[0, 0.5, 1].map((g, i) => (
+        <text key={i} x={pad.l - 6} y={yFor(max * (1 - g)) + 4} fontSize="9"
+          fill="oklch(58% 0.015 240)" textAnchor="end">
+          {Math.round(max * (1 - g))}
+        </text>
+      ))}
+      <path d={area} fill="oklch(62% 0.18 22 / 0.15)"/>
+      <path d={path} fill="none" stroke="oklch(62% 0.18 22)" strokeWidth="2"/>
+      {data.map((d, i) => (
+        <circle key={i} cx={xFor(i)} cy={yFor(d.visits)} r="2.5" fill="oklch(62% 0.18 22)">
+          <title>{d.date}: {d.visits} visits</title>
+        </circle>
+      ))}
+      {data.map((d, i) => (i % labelEvery === 0 || i === data.length - 1) && (
+        <text key={'l'+i} x={xFor(i)} y={H - 6} fontSize="9"
+          fill="oklch(58% 0.015 240)" textAnchor="middle">{fmtDate(d.date)}</text>
+      ))}
+    </svg>
+  );
+}
+
+function PctBar({pct, color}) {
+  return (
+    <div style={{background:T.bg3, borderRadius:3, height:5, overflow:'hidden', flex:1}}>
+      <div style={{background:color || T.accent, width:`${Math.max(2, pct)}%`, height:'100%',
+        transition:'width .25s'}}/>
+    </div>
+  );
+}
+
+function Card({title, children, action}) {
+  return (
+    <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:20}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14, gap:10}}>
+        <div style={{fontSize:13, fontWeight:600, color:T.fg, letterSpacing:'0.04em', textTransform:'uppercase'}}>{title}</div>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function TabAnalytics() {
+  const [period,   setPeriod]   = useState(7);
+  const [overview, setOverview] = useState(null);
+  const [daily,    setDaily]    = useState(null);
+  const [pages,    setPages]    = useState(null);
+  const [countries,setCountries]= useState(null);
+  const [devices,  setDevices]  = useState(null);
+  const [browsers, setBrowsers] = useState(null);
+  const [refs,     setRefs]     = useState(null);
+
+  const loadAll = (p) => {
+    aFetch('type=overview').then(setOverview);
+    aFetch('type=daily&period=30').then(setDaily);
+    aFetch(`type=pages&period=${p}`).then(setPages);
+    aFetch(`type=countries&period=${p}`).then(setCountries);
+    aFetch(`type=devices&period=${p}`).then(setDevices);
+    aFetch(`type=browsers&period=${p}`).then(setBrowsers);
+    aFetch(`type=referrers&period=${p}`).then(setRefs);
+  };
+
+  useEffect(() => { loadAll(period); }, [period]);
+  useEffect(() => {
+    const t = setInterval(() => loadAll(period), 5 * 60 * 1000);
+    return () => clearInterval(t);
+  }, [period]);
+
+  const todayDelta = (() => {
+    if (!overview) return null;
+    const t = overview.today, y = overview.yesterday;
+    if (!y) return t > 0 ? '+new' : null;
+    const pct = Math.round(((t - y) / y) * 100);
+    return (pct >= 0 ? '+' : '') + pct + '% vs yesterday';
+  })();
+
+  const summary = [
+    {label:"Today's Visits",     value: overview ? overview.today    : null, sub: todayDelta, color: T.accent},
+    {label:"This Week",          value: overview ? overview.week     : null, color: T.green},
+    {label:"This Month",         value: overview ? overview.month    : null, color: T.yellow},
+    {label:"All Time",           value: overview ? overview.all_time : null, color: T.fg},
+  ];
+
+  const totalPages    = pages    ? pages.reduce((a, p) => a + p.visits, 0) : 0;
+  const totalDev      = devices  ? (devices.mobile + devices.desktop + devices.tablet) : 0;
+  const totalBrowsers = browsers ? Object.values(browsers).reduce((a, b) => a + b, 0) : 0;
+
+  const browserOrder = ['Chrome','Safari','Firefox','Edge','Opera','Other'];
+  const noDataYet = overview && overview.all_time === 0;
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:24, flexWrap:'wrap', gap:12}}>
+        <div>
+          <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Analytics</h2>
+          <p style={{color:T.muted, fontSize:13}}>Visitor traffic, devices, and referrers. Auto-refreshes every 5 minutes.</p>
+        </div>
+        <div style={{display:'flex', gap:6}}>
+          {[7, 30, 90].map(p => (
+            <button key={p} onClick={() => setPeriod(p)} style={{
+              padding:'7px 14px', borderRadius:5, fontSize:12, fontWeight:500, cursor:'pointer',
+              background: period === p ? T.accent : 'transparent',
+              border: `1px solid ${period === p ? T.accent : T.border}`,
+              color: period === p ? 'white' : T.muted,
+            }}>{p} days</button>
+          ))}
+        </div>
+      </div>
+
+      {noDataYet && (
+        <div style={{background:T.bg2, border:`1px dashed ${T.border}`, borderRadius:8, padding:'30px 20px',
+          textAlign:'center', color:T.muted, fontSize:13, marginBottom:24}}>
+          No visitor data yet. Visit the front-end pages and analytics will appear here.
+        </div>
+      )}
+
+      {/* Summary cards */}
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:12, marginBottom:20}}>
+        {summary.map(s => (
+          <div key={s.label} style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:'18px 20px'}}>
+            <div style={{fontSize:28, fontWeight:600, color:s.color, marginBottom:4}}>
+              {s.value == null ? <Skeleton h={26}/> : s.value.toLocaleString()}
+            </div>
+            <div style={{fontSize:11, color:T.muted}}>{s.label}</div>
+            {s.sub && <div style={{fontSize:10, color:T.muted, opacity:.8, marginTop:4}}>{s.sub}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* Hero info row */}
+      {overview && (overview.top_page_today || overview.top_country_today) && (
+        <div style={{display:'flex', flexWrap:'wrap', gap:14, marginBottom:24}}>
+          {overview.top_page_today && (
+            <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 16px', fontSize:12, color:T.muted}}>
+              <span style={{color:T.muted}}>Most visited today: </span>
+              <strong style={{color:T.fg, fontWeight:600}}>{overview.top_page_today}</strong>
+            </div>
+          )}
+          {overview.top_country_today && (
+            <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:'10px 16px', fontSize:12, color:T.muted}}>
+              <span style={{color:T.muted}}>Top country today: </span>
+              <strong style={{color:T.fg, fontWeight:600}}>
+                {COUNTRY_FLAGS[overview.top_country_today] || '🌐'} {overview.top_country_today}
+              </strong>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Daily line chart */}
+      <div style={{marginBottom:20}}>
+        <Card title="Daily Visits — Last 30 Days">
+          {daily ? <LineChart data={daily}/> : <div style={{height:200}}><Skeleton h={200}/></div>}
+        </Card>
+      </div>
+
+      {/* Two-column grid */}
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20}}>
+        {/* Pages */}
+        <Card title="Pages">
+          {!pages
+            ? <Skeleton h={120}/>
+            : pages.length === 0
+              ? <div style={{color:T.muted, fontSize:12}}>No data for this period.</div>
+              : (
+                <div style={{display:'flex', flexDirection:'column', gap:10}}>
+                  {pages.map(p => {
+                    const pct = totalPages ? (p.visits / totalPages * 100) : 0;
+                    return (
+                      <div key={p.page}>
+                        <div style={{display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:4}}>
+                          <span style={{color:T.fg}}>{p.label}</span>
+                          <span style={{color:T.muted}}>
+                            {p.visits.toLocaleString()} · {pct.toFixed(0)}% · {p.unique.toLocaleString()} uniq
+                          </span>
+                        </div>
+                        <PctBar pct={pct}/>
+                      </div>
+                    );
+                  })}
+                </div>
+              )
+          }
+        </Card>
+
+        {/* Countries + Devices + Browsers stacked */}
+        <div style={{display:'flex', flexDirection:'column', gap:16}}>
+          <Card title="Top Countries">
+            {!countries
+              ? <Skeleton h={80}/>
+              : countries.length === 0
+                ? <div style={{color:T.muted, fontSize:12}}>No data for this period.</div>
+                : (
+                  <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                    {countries.map(c => (
+                      <div key={c.country} style={{display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:12}}>
+                        <span style={{color:T.fg}}>{COUNTRY_FLAGS[c.country] || '🌐'} {c.country}</span>
+                        <span style={{color:T.muted}}>{c.visits.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+            }
+          </Card>
+
+          <Card title="Devices">
+            {!devices
+              ? <Skeleton h={40}/>
+              : (() => {
+                const items = [
+                  {key:'mobile',  label:'Mobile',  v: devices.mobile,  color: T.accent},
+                  {key:'desktop', label:'Desktop', v: devices.desktop, color: T.green},
+                  {key:'tablet',  label:'Tablet',  v: devices.tablet,  color: T.yellow},
+                ];
+                if (totalDev === 0) return <div style={{color:T.muted, fontSize:12}}>No data.</div>;
+                return (
+                  <div style={{display:'flex', flexDirection:'column', gap:8}}>
+                    {items.map(it => {
+                      const pct = totalDev ? (it.v / totalDev * 100) : 0;
+                      return (
+                        <div key={it.key}>
+                          <div style={{display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:4}}>
+                            <span style={{color:T.fg}}>{it.label}</span>
+                            <span style={{color:T.muted}}>{pct.toFixed(0)}%</span>
+                          </div>
+                          <PctBar pct={pct} color={it.color}/>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()
+            }
+          </Card>
+
+          <Card title="Browsers">
+            {!browsers
+              ? <Skeleton h={60}/>
+              : totalBrowsers === 0
+                ? <div style={{color:T.muted, fontSize:12}}>No data.</div>
+                : (
+                  <div style={{display:'flex', flexDirection:'column', gap:5}}>
+                    {browserOrder.filter(b => (browsers[b] || 0) > 0).map(b => {
+                      const v = browsers[b] || 0;
+                      const pct = totalBrowsers ? (v / totalBrowsers * 100) : 0;
+                      return (
+                        <div key={b} style={{display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:12}}>
+                          <span style={{color:T.fg}}>{b}</span>
+                          <span style={{color:T.muted}}>{pct.toFixed(0)}% · {v.toLocaleString()}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
+            }
+          </Card>
+        </div>
+      </div>
+
+      {/* Referrers */}
+      <Card title="Top Referrers">
+        {!refs
+          ? <Skeleton h={80}/>
+          : refs.length === 0
+            ? <div style={{color:T.muted, fontSize:12}}>No data for this period.</div>
+            : (
+              <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+                <thead>
+                  <tr style={{textAlign:'left', color:T.muted, fontWeight:500, borderBottom:`1px solid ${T.border}`}}>
+                    <th style={{padding:'8px 4px'}}>Referrer</th>
+                    <th style={{padding:'8px 4px', textAlign:'right'}}>Visits</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {refs.map(r => (
+                    <tr key={r.referrer} style={{borderBottom:`1px solid ${T.border}`}}>
+                      <td style={{padding:'8px 4px', color: r.referrer === 'Direct' ? T.muted : T.fg}}>{r.referrer}</td>
+                      <td style={{padding:'8px 4px', textAlign:'right', color:T.muted}}>{r.visits.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
+        }
+      </Card>
+    </div>
+  );
+}
+
 function StatBox({label, value, unit}) {
   return (
     <div style={{padding:'12px 14px', background:T.bg3, borderRadius:6}}>
@@ -1269,8 +1594,9 @@ function App() {
     <div style={{display:'flex', minHeight:'100vh'}}>
       <Sidebar tab={tab} setTab={setTab} pageCount={pages.length}/>
       <main style={{flex:1, padding:'32px 36px', overflowY:'auto', maxHeight:'100vh', background:T.bg}}>
-        {tab === 'overview' && <TabOverview pages={pages} visibility={visibility}/>}
-        {tab === 'pages'    && <TabPages pages={pages} visibility={visibility} setVisibility={setVisibility} setPages={setPages} savePages={savePages}/>}
+        {tab === 'overview'  && <TabOverview pages={pages} visibility={visibility}/>}
+        {tab === 'analytics' && <TabAnalytics/>}
+        {tab === 'pages'     && <TabPages pages={pages} visibility={visibility} setVisibility={setVisibility} setPages={setPages} savePages={savePages}/>}
         {tab === 'media'    && <TabMedia splatEnabled={splatEnabled}/>}
         {tab === 'colors'   && <TabColors activeTheme={activeTheme} setActiveTheme={setActiveTheme}/>}
         {tab === 'content'  && <TabContent/>}
