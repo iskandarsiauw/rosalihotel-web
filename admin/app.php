@@ -1317,6 +1317,7 @@ function TabAnalytics() {
   const [devices,  setDevices]  = useState(null);
   const [browsers, setBrowsers] = useState(null);
   const [refs,     setRefs]     = useState(null);
+  const [recent,   setRecent]   = useState(null);
 
   const loadAll = (p) => {
     aFetch('type=overview').then(setOverview);
@@ -1326,6 +1327,7 @@ function TabAnalytics() {
     aFetch(`type=devices&period=${p}`).then(setDevices);
     aFetch(`type=browsers&period=${p}`).then(setBrowsers);
     aFetch(`type=referrers&period=${p}`).then(setRefs);
+    aFetch('type=recent').then(setRecent);
   };
 
   useEffect(() => { loadAll(period); }, [period]);
@@ -1551,6 +1553,51 @@ function TabAnalytics() {
             )
         }
       </Card>
+
+      {/* Recent visits — raw log */}
+      <div style={{marginTop:20}}>
+        <Card title="Recent Visits (last 30)">
+          {!recent
+            ? <Skeleton h={120}/>
+            : recent.length === 0
+              ? <div style={{color:T.muted, fontSize:12}}>No visits logged yet.</div>
+              : (
+                <div style={{overflowX:'auto'}}>
+                  <table style={{width:'100%', borderCollapse:'collapse', fontSize:11}}>
+                    <thead>
+                      <tr style={{textAlign:'left', color:T.muted, fontWeight:500, borderBottom:`1px solid ${T.border}`}}>
+                        <th style={{padding:'8px 6px'}}>Time</th>
+                        <th style={{padding:'8px 6px'}}>Page</th>
+                        <th style={{padding:'8px 6px'}}>IP</th>
+                        <th style={{padding:'8px 6px'}}>Location</th>
+                        <th style={{padding:'8px 6px'}}>Device</th>
+                        <th style={{padding:'8px 6px'}}>Browser / OS</th>
+                        <th style={{padding:'8px 6px'}}>Referrer</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recent.map((r, i) => {
+                        const loc = [r.city, r.country].filter(Boolean).join(', ') || '—';
+                        const flag = r.country && COUNTRY_FLAGS[r.country] ? COUNTRY_FLAGS[r.country] + ' ' : '';
+                        return (
+                          <tr key={i} style={{borderBottom:`1px solid ${T.border}`}}>
+                            <td style={{padding:'7px 6px', color:T.muted, whiteSpace:'nowrap'}}>{r.when}</td>
+                            <td style={{padding:'7px 6px', color:T.fg}}>{r.page}</td>
+                            <td style={{padding:'7px 6px', color:T.muted, fontFamily:'monospace'}}>{r.ip}</td>
+                            <td style={{padding:'7px 6px', color: loc === '—' ? T.muted : T.fg}}>{flag}{loc}</td>
+                            <td style={{padding:'7px 6px', color:T.muted}}>{r.device || '—'}</td>
+                            <td style={{padding:'7px 6px', color:T.muted}}>{(r.browser || '—') + ' / ' + (r.os || '—')}</td>
+                            <td style={{padding:'7px 6px', color: r.referrer ? T.fg : T.muted}}>{r.referrer || 'Direct'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
+          }
+        </Card>
+      </div>
     </div>
   );
 }

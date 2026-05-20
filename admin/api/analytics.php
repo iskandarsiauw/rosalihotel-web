@@ -34,6 +34,7 @@ try {
         case 'browsers':   echo json_encode(handleBrowsers($pdo, $period));          break;
         case 'daily':      echo json_encode(handleDaily($pdo, max($period, 30)));    break;
         case 'referrers':  echo json_encode(handleReferrers($pdo, $period));         break;
+        case 'recent':     echo json_encode(handleRecent($pdo, $PAGE_LABELS));       break;
         default:
             http_response_code(400);
             echo json_encode(['error' => 'unknown type']);
@@ -202,6 +203,35 @@ function handleReferrers(PDO $pdo, int $period): array {
     $out = [];
     foreach (array_slice($counts, 0, 10, true) as $k => $v) {
         $out[] = ['referrer' => $k, 'visits' => $v];
+    }
+    return $out;
+}
+
+function handleRecent(PDO $pdo, array $labels): array {
+    $stmt = $pdo->query(
+        "SELECT page, ip_address, country, city, device_type, browser, os, referrer,
+                visit_date, visit_time
+         FROM visitor_logs
+         ORDER BY id DESC LIMIT 30"
+    );
+    $out = [];
+    foreach ($stmt->fetchAll() as $r) {
+        $ref = $r['referrer'];
+        if ($ref) {
+            $h = parse_url($ref, PHP_URL_HOST);
+            if ($h) $ref = preg_replace('/^www\./i', '', $h);
+        }
+        $out[] = [
+            'page'    => $labels[$r['page']] ?? $r['page'],
+            'ip'      => $r['ip_address'],
+            'country' => $r['country'],
+            'city'    => $r['city'],
+            'device'  => $r['device_type'],
+            'browser' => $r['browser'],
+            'os'      => $r['os'],
+            'referrer'=> $ref,
+            'when'    => $r['visit_date'] . ' ' . $r['visit_time'],
+        ];
     }
     return $out;
 }
