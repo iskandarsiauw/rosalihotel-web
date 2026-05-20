@@ -1,0 +1,18 @@
+# ============================================================
+# Admin panel access switch.
+# ============================================================
+#
+# By default the admin panel is OPEN (only protected by the
+# PHP session-based login).
+#
+# To temporarily LOCK the entire admin panel — even before the
+# login form loads — uncomment the 3 lines below (remove the
+# leading "#" on each). Anyone hitting /admin/ will see a 403
+# Forbidden until you re-comment them.
+#
+# Toggle via: cPanel → File Manager → Show Hidden Files →
+#             admin/.htaccess → Edit.
+#
+# # <RequireAll>
+# #   Require all denied
+# # </RequireAll>
