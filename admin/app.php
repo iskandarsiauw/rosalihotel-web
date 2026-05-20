@@ -1131,10 +1131,14 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
   const [confirmTxt, setConfirmTxt] = useState('');
   const [stats,      setStats]      = useState(null);
   const [busy,       setBusy]       = useState(false);
+  const [geoLocal,   setGeoLocal]   = useState(false);
 
   const refreshStats = () => fetch('api/settings-stats.php').then(r => r.json()).then(setStats).catch(() => {});
 
-  useEffect(() => { refreshStats(); }, []);
+  useEffect(() => {
+    refreshStats();
+    apiGet('geo_local_enabled').then(v => setGeoLocal(v === '1'));
+  }, []);
 
   const clearAll = async () => {
     if (confirmTxt !== 'RESET') { alert('Type RESET to confirm'); return; }
@@ -1158,6 +1162,12 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
     const next = !splatEnabled;
     setSplatEnabled(next);
     await apiSet('splat_enabled', next ? '1' : '0');
+  };
+
+  const toggleGeoLocal = async () => {
+    const next = !geoLocal;
+    setGeoLocal(next);
+    await apiSet('geo_local_enabled', next ? '1' : '0');
   };
 
   const fmtBytes = b => {
@@ -1188,6 +1198,26 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
           position:'relative', cursor:'pointer', transition:'background .2s'
         }}>
           <span style={{position:'absolute', top:3, left: splatEnabled ? 28 : 3,
+            width:22, height:22, borderRadius:'50%', background:'white',
+            transition:'left .2s'}}/>
+        </button>
+      </div>
+
+      {/* Local geo toggle */}
+      <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:20, marginBottom:16,
+        display:'flex', justifyContent:'space-between', alignItems:'center', gap:16, flexWrap:'wrap'}}>
+        <div>
+          <div style={{fontSize:14, fontWeight:600, color:T.fg, marginBottom:4}}>🌐 Resolve geo for local visits</div>
+          <p style={{fontSize:12, color:T.muted, lineHeight:1.6, maxWidth:520}}>
+            Dev convenience. When ON, analytics treats local / private-network visits as if they came from the server itself — ip-api.com is asked to resolve the server's public IP and the resulting country/city is shown in the dashboard. Turn OFF in production.
+          </p>
+        </div>
+        <button onClick={toggleGeoLocal} style={{
+          width:54, height:28, borderRadius:14, border:'none',
+          background: geoLocal ? T.accent : T.bg3,
+          position:'relative', cursor:'pointer', transition:'background .2s'
+        }}>
+          <span style={{position:'absolute', top:3, left: geoLocal ? 28 : 3,
             width:22, height:22, borderRadius:'50%', background:'white',
             transition:'left .2s'}}/>
         </button>

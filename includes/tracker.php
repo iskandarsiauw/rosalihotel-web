@@ -121,17 +121,23 @@ function trackerDetect(string $ua): array {
 }
 
 function trackerGeo(PDO $pdo, string $rawIp): array {
-    // Skip private / loopback ranges — ip-api won't resolve them and we don't want to waste calls.
-    if (!filter_var($rawIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-        return [null, null];
+    $isLocal = !filter_var($rawIp, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
+
+    // Local/loopback IPs are skipped unless the admin enabled the dev toggle.
+    // When the toggle is on, we resolve via ip-api without an IP — the API uses
+    // the *caller's* (i.e. our server's) public IP, giving the server's geo.
+    if ($isLocal) {
+        if (getSetting('geo_local_enabled', '0') !== '1') return [null, null];
     }
+
+    $cacheKey = $isLocal ? '__server__' : $rawIp;
 
     try {
         $sel = $pdo->prepare(
             'SELECT country, city FROM visitor_ip_cache
              WHERE ip_address = ? AND DATE(cached_at) = CURDATE() LIMIT 1'
         );
-        $sel->execute([$rawIp]);
+        $sel->execute([$cacheKey]);
         $row = $sel->fetch();
         if ($row) return [$row['country'], $row['city']];
     } catch (PDOException) { /* fall through to fresh lookup */ }
@@ -139,7 +145,9 @@ function trackerGeo(PDO $pdo, string $rawIp): array {
     // Fresh API call — short timeout so a slow API can't pause page render meaningfully.
     $country = null; $city = null;
     $ctx = stream_context_create(['http' => ['timeout' => 1, 'method' => 'GET']]);
-    $url = 'http://ip-api.com/json/' . rawurlencode($rawIp) . '?fields=country,city,status';
+    $url = $isLocal
+        ? 'http://ip-api.com/json/?fields=country,city,status'
+        : 'http://ip-api.com/json/' . rawurlencode($rawIp) . '?fields=country,city,status';
     $json = @file_get_contents($url, false, $ctx);
     if ($json !== false) {
         $d = json_decode($json, true);
@@ -158,7 +166,7 @@ function trackerGeo(PDO $pdo, string $rawIp): array {
                city    = VALUES(city),
                cached_at = NOW()'
         );
-        $up->execute([$rawIp, $country, $city]);
+        $up->execute([$cacheKey, $country, $city]);
     } catch (PDOException) {}
 
     return [$country, $city];
