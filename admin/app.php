@@ -471,6 +471,7 @@ function Sidebar({tab, setTab, pageCount}) {
     {id:'media',    icon:'⬤', label:'Media'},
     {id:'colors',   icon:'◉', label:'Colors'},
     {id:'content',  icon:'≡', label:'Content'},
+    {id:'seo',      icon:'⚲', label:'SEO'},
     {id:'layout',   icon:'⊟', label:'Layout'},
     {id:'settings', icon:'⚙', label:'Settings'},
   ];
@@ -1126,6 +1127,180 @@ function TabLayout() {
   );
 }
 
+/* ── SEO ── */
+const SEO_PAGE_ORDER = ['home','rooms','events','cafe','gallery','tourism','contact'];
+const SEO_PAGE_LABELS = {
+  home:'Home', rooms:'Rooms', events:'Events', cafe:'Café',
+  gallery:'Gallery', tourism:'Tourism', contact:'Contact',
+};
+
+function SeoField({label, hint, value, placeholder, multi, maxLen, onChange}) {
+  const len = (value || '').length;
+  const over = maxLen && len > maxLen;
+  return (
+    <div style={{marginBottom:12}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:5}}>
+        <label style={{fontSize:11, fontWeight:500, color:T.fg, textTransform:'uppercase', letterSpacing:'0.04em'}}>{label}</label>
+        {maxLen != null && value !== '' && (
+          <span style={{fontSize:10, color: over ? T.red : T.muted}}>{len}/{maxLen}</span>
+        )}
+      </div>
+      {multi
+        ? <textarea value={value || ''} onChange={e => onChange(e.target.value)} placeholder={placeholder || ''}
+            rows={2} style={{...IS, resize:'vertical', minHeight:54, lineHeight:1.5}}/>
+        : <input type="text" value={value || ''} onChange={e => onChange(e.target.value)}
+            placeholder={placeholder || ''} style={IS}/>
+      }
+      {hint && <div style={{fontSize:10, color:T.muted, marginTop:4}}>{hint}</div>}
+    </div>
+  );
+}
+
+function SeoPagePanel({page, defaults, overrides, onChange}) {
+  const eff = {
+    title_en:       overrides.title_en       || defaults.title_en,
+    title_id:       overrides.title_id       || defaults.title_id,
+    description_en: overrides.description_en || defaults.description_en,
+    description_id: overrides.description_id || defaults.description_id,
+    og_image:       overrides.og_image       || defaults.og_slot_url || '',
+  };
+  return (
+    <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:20, marginBottom:14}}>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14}}>
+        <h3 style={{fontSize:15, color:T.fg, fontWeight:600}}>{SEO_PAGE_LABELS[page]}</h3>
+        <a href={'../' + (page === 'home' ? 'index.php' : page + '.php')} target="_blank"
+          style={{fontSize:11, color:T.muted}}>Preview ↗</a>
+      </div>
+
+      <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:14}}>
+        <div>
+          <div style={{fontSize:10, color:T.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.06em'}}>English</div>
+          <SeoField label="Title" placeholder={defaults.title_en} value={overrides.title_en}
+            hint="Browser tab & Google result heading. ~60 chars." maxLen={60}
+            onChange={v => onChange('title_en', v)}/>
+          <SeoField label="Meta description" placeholder={defaults.description_en} value={overrides.description_en} multi
+            hint="Snippet shown in Google. ~155 chars." maxLen={160}
+            onChange={v => onChange('description_en', v)}/>
+        </div>
+        <div>
+          <div style={{fontSize:10, color:T.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.06em'}}>Bahasa Indonesia</div>
+          <SeoField label="Title" placeholder={defaults.title_id} value={overrides.title_id}
+            maxLen={60} onChange={v => onChange('title_id', v)}/>
+          <SeoField label="Meta description" placeholder={defaults.description_id} value={overrides.description_id} multi
+            maxLen={160} onChange={v => onChange('description_id', v)}/>
+        </div>
+      </div>
+
+      <SeoField label="Keywords (optional)" value={overrides.keywords}
+        hint="Comma-separated. Note: Google ignores meta keywords; left here for other crawlers."
+        onChange={v => onChange('keywords', v)}/>
+
+      <SeoField label="Open Graph image URL" value={overrides.og_image}
+        placeholder={defaults.og_slot_url || '(no default image — set one in Media)'}
+        hint="Image shown when this page is shared on social media. Defaults to the page's hero slot if set."
+        onChange={v => onChange('og_image', v)}/>
+
+      {eff.og_image && (
+        <div style={{marginTop:6, marginBottom:12}}>
+          <img src={eff.og_image} alt="" style={{maxWidth:240, maxHeight:130, borderRadius:5, border:`1px solid ${T.border}`}}/>
+        </div>
+      )}
+
+      <label style={{display:'flex', alignItems:'center', gap:8, fontSize:12, color:T.muted, marginTop:6, cursor:'pointer'}}>
+        <input type="checkbox" checked={overrides.noindex} onChange={e => onChange('noindex', e.target.checked)}/>
+        Hide this page from search engines (noindex, nofollow)
+      </label>
+
+      {/* Live Google-result preview */}
+      <div style={{marginTop:18, padding:'12px 14px', background:T.bg3, borderRadius:6, fontFamily:'Arial, sans-serif'}}>
+        <div style={{fontSize:10, color:T.muted, marginBottom:6, textTransform:'uppercase', letterSpacing:'0.04em'}}>Search result preview</div>
+        <div style={{color:'#8ab4f8', fontSize:14, marginBottom:2, lineHeight:1.3}}>{eff.title_id}</div>
+        <div style={{color:'#9aa0a6', fontSize:11, marginBottom:4}}>rosalihotel.id › {(page === 'home' ? '' : page)}</div>
+        <div style={{color:T.fg, fontSize:12, lineHeight:1.4, opacity:.85}}>{eff.description_id}</div>
+      </div>
+    </div>
+  );
+}
+
+function TabSEO() {
+  const [data,    setData]    = useState(null);
+  const [savedAt, setSavedAt] = useState(0);
+  const debouncers = useRef({});
+
+  useEffect(() => {
+    fetch('api/seo.php').then(r => r.json()).then(setData).catch(() => {});
+  }, []);
+
+  const saveSetting = (key, value) => {
+    if (debouncers.current[key]) clearTimeout(debouncers.current[key]);
+    debouncers.current[key] = setTimeout(() => {
+      apiSet(key, typeof value === 'boolean' ? (value ? '1' : '0') : value);
+      setSavedAt(Date.now());
+    }, 350);
+  };
+
+  const setSiteUrl = v => {
+    setData(d => ({...d, site_url: v}));
+    saveSetting('seo_site_url', v);
+  };
+
+  const updateField = (pageId, field, value) => {
+    setData(d => {
+      const next = {...d, pages: {...d.pages}};
+      next.pages[pageId] = {...next.pages[pageId],
+        overrides: {...next.pages[pageId].overrides, [field]: value}};
+      return next;
+    });
+    saveSetting(`seo_${pageId}_${field}`, value);
+  };
+
+  if (!data) {
+    return (
+      <div>
+        <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>SEO</h2>
+        <p style={{color:T.muted, fontSize:13}}>Loading…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end', marginBottom:24, flexWrap:'wrap', gap:12}}>
+        <div>
+          <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>SEO</h2>
+          <p style={{color:T.muted, fontSize:13, maxWidth:620}}>
+            Override page titles, meta descriptions, and social-share images. Empty fields fall back to sensible hardcoded defaults. Changes save automatically.
+          </p>
+        </div>
+        {savedAt > 0 && (
+          <div style={{fontSize:11, color:T.green}}>✓ Saved</div>
+        )}
+      </div>
+
+      {/* Site-wide */}
+      <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:20, marginBottom:18}}>
+        <div style={{fontSize:13, color:T.fg, fontWeight:600, marginBottom:10, textTransform:'uppercase', letterSpacing:'0.04em'}}>Site-wide</div>
+        <SeoField label="Canonical site URL" value={data.site_url}
+          placeholder="https://www.rosalihotel.id"
+          hint="Used for canonical links, Open Graph URLs, sitemap.xml, and JSON-LD schema. Leave blank to derive from the current request."
+          onChange={setSiteUrl}/>
+        <div style={{display:'flex', gap:14, fontSize:11, color:T.muted, marginTop:4}}>
+          <a href="../sitemap.xml" target="_blank" style={{color:T.muted}}>View sitemap.xml ↗</a>
+          <a href="../robots.txt"  target="_blank" style={{color:T.muted}}>View robots.txt ↗</a>
+        </div>
+      </div>
+
+      {/* Per page */}
+      {SEO_PAGE_ORDER.map(id => data.pages[id] && (
+        <SeoPagePanel key={id} page={id}
+          defaults={data.pages[id].defaults}
+          overrides={data.pages[id].overrides}
+          onChange={(field, value) => updateField(id, field, value)}/>
+      ))}
+    </div>
+  );
+}
+
 /* ── Settings ── */
 function TabSettings({splatEnabled, setSplatEnabled}) {
   const [confirmTxt, setConfirmTxt] = useState('');
@@ -1677,6 +1852,7 @@ function App() {
         {tab === 'media'    && <TabMedia splatEnabled={splatEnabled}/>}
         {tab === 'colors'   && <TabColors activeTheme={activeTheme} setActiveTheme={setActiveTheme}/>}
         {tab === 'content'  && <TabContent/>}
+        {tab === 'seo'      && <TabSEO/>}
         {tab === 'layout'   && <TabLayout/>}
         {tab === 'settings' && <TabSettings splatEnabled={splatEnabled} setSplatEnabled={setSplatEnabled}/>}
       </main>
