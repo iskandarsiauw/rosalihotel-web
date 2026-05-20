@@ -1513,8 +1513,92 @@ function Card({title, children, action}) {
   );
 }
 
+/* Date range helpers — `range` is {preset: 7|30|90|'custom', from, to, label} */
+function isoDate(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function presetRange(days) {
+  const to   = new Date();
+  const from = new Date(); from.setDate(from.getDate() - (days - 1));
+  return {preset: days, from: isoDate(from), to: isoDate(to), label: `Last ${days} days`};
+}
+function rangeQS(range) {
+  return `from=${range.from}&to=${range.to}`;
+}
+function fmtRangeLabel(range) {
+  if (range.preset && range.preset !== 'custom') return `Last ${range.preset} days`;
+  return `${range.from} → ${range.to}`;
+}
+
+function DateRangeSelector({range, setRange, presets, allowCustom}) {
+  const [editing, setEditing] = useState(false);
+  const [draftFrom, setDraftFrom] = useState(range.from);
+  const [draftTo,   setDraftTo]   = useState(range.to);
+
+  const pickPreset = (d) => {
+    setRange(presetRange(d));
+    setEditing(false);
+  };
+  const applyCustom = () => {
+    if (!draftFrom || !draftTo) return;
+    const from = draftFrom < draftTo ? draftFrom : draftTo;
+    const to   = draftFrom < draftTo ? draftTo   : draftFrom;
+    setRange({preset:'custom', from, to, label: `${from} → ${to}`});
+    setEditing(false);
+  };
+
+  return (
+    <div style={{position:'relative', display:'flex', gap:6, flexWrap:'wrap'}}>
+      {presets.map(p => (
+        <button key={p} onClick={() => pickPreset(p)} style={{
+          padding:'7px 14px', borderRadius:5, fontSize:12, fontWeight:500, cursor:'pointer',
+          background: range.preset === p ? T.accent : 'transparent',
+          border: `1px solid ${range.preset === p ? T.accent : T.border}`,
+          color: range.preset === p ? 'white' : T.muted,
+        }}>{p} days</button>
+      ))}
+      {allowCustom && (
+        <button onClick={() => { setDraftFrom(range.from); setDraftTo(range.to); setEditing(v => !v); }} style={{
+          padding:'7px 14px', borderRadius:5, fontSize:12, fontWeight:500, cursor:'pointer',
+          background: range.preset === 'custom' ? T.accent : 'transparent',
+          border: `1px solid ${range.preset === 'custom' ? T.accent : T.border}`,
+          color: range.preset === 'custom' ? 'white' : T.muted,
+        }}>
+          {range.preset === 'custom' ? fmtRangeLabel(range) : 'Custom ▾'}
+        </button>
+      )}
+      {editing && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 6px)', right:0, zIndex:10,
+          background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:14,
+          boxShadow:'0 8px 24px rgba(0,0,0,.4)', display:'flex', flexDirection:'column', gap:10, minWidth:260,
+        }}>
+          <div style={{fontSize:11, color:T.muted, textTransform:'uppercase', letterSpacing:'0.05em'}}>Custom range</div>
+          <label style={{fontSize:11, color:T.muted, display:'flex', flexDirection:'column', gap:4}}>
+            From
+            <input type="date" value={draftFrom} max={isoDate(new Date())} onChange={e => setDraftFrom(e.target.value)}
+              style={{...IS, padding:'7px 10px', fontSize:12}}/>
+          </label>
+          <label style={{fontSize:11, color:T.muted, display:'flex', flexDirection:'column', gap:4}}>
+            To
+            <input type="date" value={draftTo} max={isoDate(new Date())} onChange={e => setDraftTo(e.target.value)}
+              style={{...IS, padding:'7px 10px', fontSize:12}}/>
+          </label>
+          <div style={{display:'flex', gap:6, justifyContent:'flex-end', marginTop:4}}>
+            <Btn small secondary onClick={() => setEditing(false)}>Cancel</Btn>
+            <Btn small onClick={applyCustom}>Apply</Btn>
+          </div>
+          <div style={{fontSize:10, color:T.muted, opacity:.8}}>Data retained for the last 730 days (2 years).</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TabAnalytics() {
-  const [period,   setPeriod]   = useState(7);
+  const [range,    setRange]    = useState(presetRange(7));
+  const [recRange, setRecRange] = useState(presetRange(7));
   const [overview, setOverview] = useState(null);
   const [daily,    setDaily]    = useState(null);
   const [pages,    setPages]    = useState(null);
@@ -1524,22 +1608,26 @@ function TabAnalytics() {
   const [refs,     setRefs]     = useState(null);
   const [recent,   setRecent]   = useState(null);
 
-  const loadAll = (p) => {
+  const loadMain = (r) => {
+    const qs = rangeQS(r);
     aFetch('type=overview').then(setOverview);
-    aFetch('type=daily&period=30').then(setDaily);
-    aFetch(`type=pages&period=${p}`).then(setPages);
-    aFetch(`type=countries&period=${p}`).then(setCountries);
-    aFetch(`type=devices&period=${p}`).then(setDevices);
-    aFetch(`type=browsers&period=${p}`).then(setBrowsers);
-    aFetch(`type=referrers&period=${p}`).then(setRefs);
-    aFetch('type=recent').then(setRecent);
+    aFetch(`type=daily&${qs}`).then(setDaily);
+    aFetch(`type=pages&${qs}`).then(setPages);
+    aFetch(`type=countries&${qs}`).then(setCountries);
+    aFetch(`type=devices&${qs}`).then(setDevices);
+    aFetch(`type=browsers&${qs}`).then(setBrowsers);
+    aFetch(`type=referrers&${qs}`).then(setRefs);
+  };
+  const loadRecent = (r) => {
+    aFetch(`type=recent&${rangeQS(r)}&limit=100`).then(setRecent);
   };
 
-  useEffect(() => { loadAll(period); }, [period]);
+  useEffect(() => { loadMain(range); },   [range]);
+  useEffect(() => { loadRecent(recRange); }, [recRange]);
   useEffect(() => {
-    const t = setInterval(() => loadAll(period), 5 * 60 * 1000);
+    const t = setInterval(() => { loadMain(range); loadRecent(recRange); }, 5 * 60 * 1000);
     return () => clearInterval(t);
-  }, [period]);
+  }, [range, recRange]);
 
   const todayDelta = (() => {
     if (!overview) return null;
@@ -1570,16 +1658,7 @@ function TabAnalytics() {
           <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Analytics</h2>
           <p style={{color:T.muted, fontSize:13}}>Visitor traffic, devices, and referrers. Auto-refreshes every 5 minutes.</p>
         </div>
-        <div style={{display:'flex', gap:6}}>
-          {[7, 30, 90].map(p => (
-            <button key={p} onClick={() => setPeriod(p)} style={{
-              padding:'7px 14px', borderRadius:5, fontSize:12, fontWeight:500, cursor:'pointer',
-              background: period === p ? T.accent : 'transparent',
-              border: `1px solid ${period === p ? T.accent : T.border}`,
-              color: period === p ? 'white' : T.muted,
-            }}>{p} days</button>
-          ))}
-        </div>
+        <DateRangeSelector range={range} setRange={setRange} presets={[7,30,90]} allowCustom/>
       </div>
 
       {noDataYet && (
@@ -1624,7 +1703,7 @@ function TabAnalytics() {
 
       {/* Daily line chart */}
       <div style={{marginBottom:20}}>
-        <Card title="Daily Visits — Last 30 Days">
+        <Card title={`Daily Visits — ${fmtRangeLabel(range)}`}>
           {daily ? <LineChart data={daily}/> : <div style={{height:200}}><Skeleton h={200}/></div>}
         </Card>
       </div>
@@ -1759,9 +1838,10 @@ function TabAnalytics() {
         }
       </Card>
 
-      {/* Recent visits — raw log */}
+      {/* Recent visits — raw log with its own range selector */}
       <div style={{marginTop:20}}>
-        <Card title="Recent Visits (last 30)">
+        <Card title={`Recent Visits — ${fmtRangeLabel(recRange)}`}
+          action={<DateRangeSelector range={recRange} setRange={setRecRange} presets={[7,30]} allowCustom/>}>
           {!recent
             ? <Skeleton h={120}/>
             : recent.length === 0
