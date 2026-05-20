@@ -1,6 +1,7 @@
 <?php
 require_once 'includes/db.php';
 require_once 'includes/functions.php';
+require_once 'includes/tracker.php';
 $theme = getActiveTheme();
 $lang  = getActiveLang();
 
