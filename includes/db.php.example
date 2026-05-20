@@ -1,4 +1,16 @@
 <?php
+/*
+ * Database connection — copy this file to includes/db.php and fill in the
+ * credentials for the environment. includes/db.php itself is NOT tracked
+ * by git (see .gitignore) so each environment can keep its own values.
+ *
+ * Local XAMPP defaults:
+ *   DB_HOST = 'localhost', DB_USER = 'root', DB_PASS = '' (empty)
+ *
+ * cPanel / Rumahweb: use the database user, password, and database name
+ * created in cPanel → "MySQL Databases".
+ */
+
 define('DB_HOST',    'localhost');
 define('DB_NAME',    'rosalihotel');
 define('DB_USER',    'root');

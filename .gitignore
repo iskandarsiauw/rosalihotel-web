@@ -10,3 +10,8 @@ uploads/splats/*
 
 # Production DB credentials — never commit, upload manually via File Manager
 includes/db.php
+
+# Apache config — differs between local (XAMPP) and prod (cPanel/LiteSpeed)
+# Each environment edits its own .htaccess directly.
+# See .htaccess.example for the canonical directives the site needs.
+.htaccess

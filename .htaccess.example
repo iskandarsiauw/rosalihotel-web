@@ -1,0 +1,35 @@
+## .htaccess template — copy to .htaccess and adjust per environment.
+##
+## The actual .htaccess is NOT tracked by git (see .gitignore) because each
+## environment needs its own version:
+##   - XAMPP locally     → just the directives below
+##   - cPanel / LiteSpeed → the directives below PLUS the cPanel-generated
+##                          <IfModule mime_module> PHP handler block at the
+##                          bottom (cPanel manages that block itself; do not
+##                          delete or hand-edit it).
+
+Options -Indexes
+
+# Block direct access to includes/
+<FilesMatch "\.(sql)$">
+  Require all denied
+</FilesMatch>
+
+# Analytics tracker is include-only — never accessible directly.
+<Files "tracker.php">
+  Require all denied
+</Files>
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^includes/ - [F,L]
+  RewriteRule ^sitemap\.xml$ sitemap.xml.php [L]
+</IfModule>
+
+## On cPanel, leave this block intact (cPanel writes it automatically):
+##
+## # php -- BEGIN cPanel-generated handler, do not edit
+## <IfModule mime_module>
+##   AddHandler application/x-httpd-ea-php83___lsphp .php .php7 .phtml
+## </IfModule>
+## # php -- END cPanel-generated handler, do not edit
