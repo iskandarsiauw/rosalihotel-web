@@ -658,7 +658,7 @@ function TabMedia({splatEnabled}) {
   useEffect(reload, []);
 
   const accept = splatEnabled
-    ? 'image/jpeg,image/png,image/webp,video/mp4,.splat,.ksplat'
+    ? 'image/jpeg,image/png,image/webp,video/mp4,.splat,.ksplat,.ply'
     : 'image/jpeg,image/png,image/webp,video/mp4';
 
   const onUploadClick = () => fileRef.current?.click();
@@ -754,7 +754,7 @@ function TabMedia({splatEnabled}) {
         <div>
           <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Media Library</h2>
           <p style={{color:T.muted, fontSize:13}}>
-            Images (10 MB JPEG/PNG/WebP) · Videos (200 MB MP4){splatEnabled ? ' · 3D Splats (500 MB .splat/.ksplat)' : ''}
+            Images (10 MB JPEG/PNG/WebP) · Videos (200 MB MP4){splatEnabled ? ' · 3D Splats (500 MB .ply/.splat/.ksplat)' : ''}
           </p>
         </div>
         <div style={{display:'flex', gap:8, alignItems:'center'}}>
@@ -1372,7 +1372,7 @@ function TabSettings({splatEnabled, setSplatEnabled}) {
         <div>
           <div style={{fontSize:14, fontWeight:600, color:T.fg, marginBottom:4}}>🧊 Enable 3D Room Tours</div>
           <p style={{fontSize:12, color:T.muted, lineHeight:1.6, maxWidth:520}}>
-            Adds support for Gaussian Splat (.splat / .ksplat) uploads. When off, splat files cannot be uploaded and the gsplat.js viewer is never loaded on any page (saves bandwidth).
+            Adds support for Gaussian Splat uploads (.ply from Polycam/KIRI/Luma, plus compressed .splat / .ksplat). When off, splat files cannot be uploaded and the gsplat.js viewer is never loaded on any page (saves bandwidth).
           </p>
         </div>
         <button onClick={toggleSplat} style={{

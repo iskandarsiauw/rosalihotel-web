@@ -47,7 +47,10 @@ $destSubdir = null;
 $maxBytes   = 0;
 $newExt     = $ext;
 
-if (in_array($ext, ['splat', 'ksplat'], true)) {
+if (in_array($ext, ['splat', 'ksplat', 'ply'], true)) {
+    // .ply here is treated as a Gaussian Splat PLY (the format Polycam, KIRI,
+    // and most capture apps export). Generic point-cloud or mesh PLYs will
+    // render incorrectly in the viewer — that's a user-side concern.
     $fileType   = 'splat';
     $destSubdir = 'uploads/splats/';
     $maxBytes   = 500 * 1024 * 1024;
