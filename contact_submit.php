@@ -16,11 +16,13 @@ if (!empty($_POST['website'] ?? '')) {
     exit;
 }
 
-$first = trim((string)($_POST['first']   ?? ''));
-$last  = trim((string)($_POST['last']    ?? ''));
-$phone = trim((string)($_POST['phone']   ?? ''));
-$email = trim((string)($_POST['email']   ?? ''));
-$msg   = trim((string)($_POST['message'] ?? ''));
+$first = trim((string)($_POST['first']        ?? ''));
+$last  = trim((string)($_POST['last']         ?? ''));
+$phone = trim((string)($_POST['phone']        ?? ''));
+$email = trim((string)($_POST['email']        ?? ''));
+$msg   = trim((string)($_POST['message']      ?? ''));
+$type  = trim((string)($_POST['inquiry_type'] ?? ''));
+if (!in_array($type, ['stay','event','cafe',''], true)) $type = '';
 
 if ($first === '' || $email === '' || $msg === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     http_response_code(400);
@@ -43,12 +45,14 @@ if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-$name    = trim($first . ' ' . $last);
-$subject = '[Rosali Website] Contact from ' . $name;
+$name      = trim($first . ' ' . $last);
+$typeLabel = ['stay'=>'Room Booking','event'=>'Event / Meeting','cafe'=>'Café Reservation'][$type] ?? '';
+$subject   = '[Rosali Website] Contact from ' . $name;
 $body =
     "Name:    {$name}\r\n"
   . "Email:   {$email}\r\n"
   . "Phone:   {$phone}\r\n"
+  . ($typeLabel !== '' ? "Inquiry: {$typeLabel}\r\n" : '')
   . "\r\n"
   . "Message:\r\n{$msg}\r\n";
 
@@ -75,9 +79,10 @@ $mailOk = @mail($to, $subject, $body, implode("\r\n", $headers));
 try {
     global $pdo;
     $stmt = $pdo->prepare(
-        'INSERT INTO messages (name, email, phone, message) VALUES (?, ?, ?, ?)'
+        'INSERT INTO messages (channel, inquiry_type, name, email, phone, message, ip_address)
+         VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
-    $stmt->execute([$name, $email, $phone, $msg]);
+    $stmt->execute(['email', $type, $name, $email, $phone, $msg, $_SERVER['REMOTE_ADDR'] ?? '']);
 } catch (PDOException) {}
 
 echo json_encode(['ok' => true, 'sent' => (bool)$mailOk]);

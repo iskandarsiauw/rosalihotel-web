@@ -56,7 +56,7 @@ function App(){
   const [lang,setLang]=useState(()=>localStorage.getItem('rosali_lang')||'id');
   const [form,setForm]=useState({name:'',phone:'',type:'stay',msg:''});
   const [mode,setMode]=useState('wa'); // 'wa' = WhatsApp form, 'email' = Email form
-  const [eform,setEform]=useState({first:'',last:'',phone:'',email:'',message:'',website:''});
+  const [eform,setEform]=useState({first:'',last:'',phone:'',email:'',inquiry_type:'stay',message:'',website:''});
   const [esending,setEsending]=useState(false);
   const [estatus,setEstatus]=useState(null); // {ok:bool,msg:str}
   const { isMobile } = useResponsive();
@@ -78,6 +78,15 @@ function App(){
     const txt = en
       ?`Hello Rosali Hotel,\n\nName: ${form.name}\nPhone: ${form.phone}\nInquiry type: ${types[form.type]}\n\nMessage: ${form.msg}\n\nThank you.`
       :`Halo Rosali Hotel,\n\nNama: ${form.name}\nTelepon: ${form.phone}\nJenis pertanyaan: ${types[form.type]}\n\nPesan: ${form.msg}\n\nTerima kasih.`;
+    // Log intent for auditing — fire-and-forget; sendBeacon survives the tab switch.
+    try {
+      const payload = {name:form.name, phone:form.phone, inquiry_type:form.type, message:form.msg};
+      const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
+      if (!(navigator.sendBeacon && navigator.sendBeacon('whatsapp_log.php', blob))) {
+        fetch('whatsapp_log.php', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload), keepalive:true}).catch(()=>{});
+      }
+    } catch {}
     window.open(`https://wa.me/6287851515500?text=${encodeURIComponent(txt)}`,'_blank');
   };
 
@@ -96,7 +105,7 @@ function App(){
       const d = await r.json().catch(()=>({}));
       if(r.ok && d.ok){
         setEstatus({ok:true,msg:en?'Thank you — your message has been sent.':'Terima kasih — pesan Anda telah dikirim.'});
-        setEform({first:'',last:'',phone:'',email:'',message:'',website:''});
+        setEform({first:'',last:'',phone:'',email:'',inquiry_type:'stay',message:'',website:''});
       } else {
         setEstatus({ok:false,msg:d.error||(en?'Could not send. Please try again.':'Tidak dapat mengirim. Coba lagi.')});
       }
@@ -267,6 +276,18 @@ function App(){
                     style={input}
                     onFocus={e=>e.target.style.borderColor='var(--accent)'}
                     onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                </div>
+                <div>
+                  <label style={{display:'block',fontFamily:'var(--font-b)',fontSize:12,color:'var(--fg)',marginBottom:6}}>
+                    {en?'Inquiry Type':'Jenis Pertanyaan'}
+                  </label>
+                  <select value={eform.inquiry_type}
+                    onChange={e=>setEform({...eform,inquiry_type:e.target.value})}
+                    style={{...input,appearance:'none'}}>
+                    <option value="stay">{en?'Room Booking':'Pemesanan Kamar'}</option>
+                    <option value="event">{en?'Event / Meeting':'Acara / Rapat'}</option>
+                    <option value="cafe">{en?'Café Reservation':'Reservasi Café'}</option>
+                  </select>
                 </div>
                 <div>
                   <label style={{display:'block',fontFamily:'var(--font-b)',fontSize:12,color:'var(--fg)',marginBottom:6}}>

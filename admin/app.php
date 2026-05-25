@@ -470,6 +470,7 @@ function Sidebar({tab, setTab, pageCount}) {
   const items = [
     {id:'overview',  icon:'◈', label:'Overview'},
     {id:'analytics', icon:'⌁', label:'Analytics'},
+    {id:'messages',  icon:'✉', label:'Messages'},
     {id:'pages',     icon:'⊞', label:'Pages', badge: pageCount},
     {id:'media',    icon:'⬤', label:'Media'},
     {id:'colors',   icon:'◉', label:'Colors'},
@@ -984,6 +985,197 @@ function TabColors({activeTheme, setActiveTheme}) {
         <Btn onClick={resetTheme} secondary>Reset {THEME_LABELS[activeTheme]}</Btn>
         <SaveBtn onSave={doSave} saved={saved}/>
       </div>
+    </div>
+  );
+}
+
+/* ── Messages (Contact Log) ── */
+function TabMessages() {
+  const [rows,    setRows]    = useState([]);
+  const [stats,   setStats]   = useState({email:{n:0,unread:0}, whatsapp:{n:0,unread:0}});
+  const [total,   setTotal]   = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [open,    setOpen]    = useState(null); // detail row id
+
+  const [filters, setFilters] = useState({channel:'', type:'', read:'', q:'', from:'', to:''});
+
+  const load = async () => {
+    setLoading(true);
+    const p = new URLSearchParams();
+    Object.entries(filters).forEach(([k,v]) => { if (v) p.set(k, v); });
+    try {
+      const r = await fetch('api/messages.php?' + p.toString(), {credentials:'same-origin'});
+      const d = await r.json();
+      setRows(d.rows || []);
+      setStats(d.stats || {email:{n:0,unread:0}, whatsapp:{n:0,unread:0}});
+      setTotal(d.total || 0);
+    } catch {}
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, [filters]);
+
+  const action = async (body) => {
+    await fetch('api/messages.php', {
+      method:'POST',
+      headers:{'Content-Type':'application/json', 'X-CSRF-Token': CSRF_TOKEN},
+      body: JSON.stringify(body),
+    });
+    await load();
+  };
+
+  const exportUrl = () => {
+    const p = new URLSearchParams({...filters, action:'export'});
+    Object.keys(filters).forEach(k => { if (!filters[k]) p.delete(k); });
+    p.set('action', 'export');
+    return 'api/messages.php?' + p.toString();
+  };
+
+  const channelChip = (ch) => {
+    const isWa = ch === 'whatsapp';
+    return (
+      <span style={{
+        display:'inline-block', fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:10,
+        background: isWa ? 'oklch(62% 0.16 148 / 0.15)' : 'oklch(62% 0.18 22 / 0.15)',
+        color:      isWa ? T.green : T.accent,
+        textTransform:'uppercase', letterSpacing:'0.05em',
+      }}>{isWa ? 'WhatsApp' : 'Email'}</span>
+    );
+  };
+
+  const typeLabel = (t) => ({stay:'Room', event:'Event', cafe:'Café'}[t] || '');
+
+  const fmtDate = (s) => {
+    try { return new Date(s.replace(' ', 'T')).toLocaleString(); } catch { return s; }
+  };
+
+  const inputS = {...IS, padding:'6px 10px', fontSize:12, width:'auto'};
+
+  return (
+    <div>
+      <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16}}>
+        <div>
+          <h2 style={{fontFamily:'Playfair Display', fontSize:24, color:T.fg, marginBottom:4}}>Messages</h2>
+          <p style={{color:T.muted, fontSize:13}}>Audit log of every contact form submission. WhatsApp entries record the intent at click — actual delivery is not verified.</p>
+        </div>
+        <div style={{display:'flex', gap:8}}>
+          <a href={exportUrl()} target="_blank"><Btn secondary>Export CSV ↓</Btn></a>
+          <Btn secondary onClick={() => action({op:'mark_all_read'})}>Mark all read</Btn>
+        </div>
+      </div>
+
+      {/* Stat tiles */}
+      <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:12, marginBottom:20}}>
+        {[
+          {label:'Total (filtered)',  value: total,                       color:T.fg},
+          {label:'Email',             value: stats.email.n,               color:T.accent,  sub:`${stats.email.unread} unread`},
+          {label:'WhatsApp',          value: stats.whatsapp.n,            color:T.green,   sub:`${stats.whatsapp.unread} unread`},
+          {label:'Unread (filtered)', value: stats.email.unread + stats.whatsapp.unread, color:T.yellow},
+        ].map(s => (
+          <div key={s.label} style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:8, padding:'14px 16px'}}>
+            <div style={{fontSize:24, fontWeight:600, color:s.color}}>{s.value}</div>
+            <div style={{fontSize:11, color:T.muted, marginTop:2}}>{s.label}</div>
+            {s.sub && <div style={{fontSize:10, color:T.muted, marginTop:2}}>{s.sub}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* Filters */}
+      <div style={{display:'flex', gap:8, flexWrap:'wrap', marginBottom:16, padding:'10px 12px',
+        background:T.bg2, border:`1px solid ${T.border}`, borderRadius:7}}>
+        <select value={filters.channel} onChange={e=>setFilters({...filters,channel:e.target.value})} style={inputS}>
+          <option value="">All channels</option>
+          <option value="email">Email</option>
+          <option value="whatsapp">WhatsApp</option>
+        </select>
+        <select value={filters.type} onChange={e=>setFilters({...filters,type:e.target.value})} style={inputS}>
+          <option value="">All types</option>
+          <option value="stay">Room Booking</option>
+          <option value="event">Event / Meeting</option>
+          <option value="cafe">Café Reservation</option>
+        </select>
+        <select value={filters.read} onChange={e=>setFilters({...filters,read:e.target.value})} style={inputS}>
+          <option value="">Any state</option>
+          <option value="0">Unread</option>
+          <option value="1">Read</option>
+        </select>
+        <input type="date" value={filters.from} onChange={e=>setFilters({...filters,from:e.target.value})} style={inputS}/>
+        <span style={{color:T.muted, alignSelf:'center', fontSize:12}}>to</span>
+        <input type="date" value={filters.to} onChange={e=>setFilters({...filters,to:e.target.value})} style={inputS}/>
+        <input placeholder="Search name / email / phone / message…" value={filters.q}
+          onChange={e=>setFilters({...filters,q:e.target.value})} style={{...inputS, minWidth:260, flex:1}}/>
+        {(filters.channel||filters.type||filters.read||filters.q||filters.from||filters.to) && (
+          <Btn small secondary onClick={()=>setFilters({channel:'',type:'',read:'',q:'',from:'',to:''})}>Clear</Btn>
+        )}
+      </div>
+
+      {/* Table */}
+      {loading ? <div style={{color:T.muted, fontSize:13}}>Loading…</div>
+      : rows.length === 0 ? <div style={{color:T.muted, fontSize:13, padding:'24px 0'}}>No messages match the current filters.</div>
+      : (
+        <div style={{background:T.bg2, border:`1px solid ${T.border}`, borderRadius:7, overflow:'hidden'}}>
+          <table style={{width:'100%', borderCollapse:'collapse', fontSize:12}}>
+            <thead>
+              <tr style={{background:T.bg3, color:T.muted, textAlign:'left'}}>
+                <th style={{padding:'10px 12px', fontWeight:500}}>Date</th>
+                <th style={{padding:'10px 8px',  fontWeight:500}}>Channel</th>
+                <th style={{padding:'10px 8px',  fontWeight:500}}>Type</th>
+                <th style={{padding:'10px 8px',  fontWeight:500}}>Name</th>
+                <th style={{padding:'10px 8px',  fontWeight:500}}>Contact</th>
+                <th style={{padding:'10px 8px',  fontWeight:500}}>Message</th>
+                <th style={{padding:'10px 8px',  fontWeight:500, width:120}}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(r => (
+                <React.Fragment key={r.id}>
+                  <tr style={{
+                    borderTop:`1px solid ${T.border}`,
+                    background: r.is_read == 0 ? 'oklch(62% 0.18 22 / 0.04)' : 'transparent',
+                    cursor:'pointer',
+                  }} onClick={() => setOpen(open === r.id ? null : r.id)}>
+                    <td style={{padding:'9px 12px', color:T.fg, whiteSpace:'nowrap'}}>{fmtDate(r.created_at)}</td>
+                    <td style={{padding:'9px 8px'}}>{channelChip(r.channel)}</td>
+                    <td style={{padding:'9px 8px', color:T.muted}}>{typeLabel(r.inquiry_type)}</td>
+                    <td style={{padding:'9px 8px', color:T.fg, fontWeight: r.is_read == 0 ? 600 : 400}}>{r.name || <span style={{color:T.muted}}>—</span>}</td>
+                    <td style={{padding:'9px 8px', color:T.muted}}>
+                      {r.email && <div>{r.email}</div>}
+                      {r.phone && <div>{r.phone}</div>}
+                      {!r.email && !r.phone && '—'}
+                    </td>
+                    <td style={{padding:'9px 8px', color:T.muted, maxWidth:320,
+                      overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>{r.message}</td>
+                    <td style={{padding:'9px 8px', textAlign:'right'}} onClick={e => e.stopPropagation()}>
+                      <div style={{display:'inline-flex', gap:4}}>
+                        <Btn small secondary onClick={() => action({op: r.is_read == 0 ? 'mark_read' : 'mark_unread', id:r.id})}>
+                          {r.is_read == 0 ? 'Read' : 'Unread'}
+                        </Btn>
+                        <Btn small danger onClick={() => { if (confirm('Delete this message?')) action({op:'delete', id:r.id}); }}>×</Btn>
+                      </div>
+                    </td>
+                  </tr>
+                  {open === r.id && (
+                    <tr style={{background:T.bg3, borderTop:`1px solid ${T.border}`}}>
+                      <td colSpan={7} style={{padding:'14px 18px', color:T.fg}}>
+                        <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:12, marginBottom:10}}>
+                          <div><div style={{fontSize:10, color:T.muted, textTransform:'uppercase'}}>Name</div><div>{r.name || '—'}</div></div>
+                          <div><div style={{fontSize:10, color:T.muted, textTransform:'uppercase'}}>Email</div><div>{r.email || '—'}</div></div>
+                          <div><div style={{fontSize:10, color:T.muted, textTransform:'uppercase'}}>Phone</div><div>{r.phone || '—'}</div></div>
+                          <div><div style={{fontSize:10, color:T.muted, textTransform:'uppercase'}}>Inquiry</div><div>{typeLabel(r.inquiry_type) || '—'}</div></div>
+                          <div><div style={{fontSize:10, color:T.muted, textTransform:'uppercase'}}>IP</div><div style={{fontFamily:'monospace'}}>{r.ip_address || '—'}</div></div>
+                          <div><div style={{fontSize:10, color:T.muted, textTransform:'uppercase'}}>Channel</div><div>{channelChip(r.channel)}</div></div>
+                        </div>
+                        <div style={{fontSize:10, color:T.muted, textTransform:'uppercase', marginBottom:4}}>Message</div>
+                        <div style={{whiteSpace:'pre-wrap', background:T.bg2, border:`1px solid ${T.border}`,
+                          borderRadius:5, padding:'10px 12px', fontSize:13, lineHeight:1.5}}>{r.message || '—'}</div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -1971,6 +2163,7 @@ function App() {
       <main style={{flex:1, padding:'32px 36px', overflowY:'auto', maxHeight:'100vh', background:T.bg}}>
         {tab === 'overview'  && <TabOverview pages={pages} visibility={visibility}/>}
         {tab === 'analytics' && <TabAnalytics/>}
+        {tab === 'messages'  && <TabMessages/>}
         {tab === 'pages'     && <TabPages pages={pages} visibility={visibility} setVisibility={setVisibility} setPages={setPages} savePages={savePages}/>}
         {tab === 'media'    && <TabMedia splatEnabled={splatEnabled}/>}
         {tab === 'colors'   && <TabColors activeTheme={activeTheme} setActiveTheme={setActiveTheme}/>}

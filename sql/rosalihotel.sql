@@ -84,17 +84,46 @@ CREATE TABLE IF NOT EXISTS `cafe_menu` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `messages` (
-  `id`         INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name`       VARCHAR(120) NOT NULL,
-  `email`      VARCHAR(160) NOT NULL DEFAULT '',
-  `phone`      VARCHAR(40)  NOT NULL DEFAULT '',
-  `message`    TEXT NOT NULL,
-  `is_read`    TINYINT(1) NOT NULL DEFAULT 0,
-  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id`           INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `channel`      ENUM('email','whatsapp') NOT NULL DEFAULT 'email',
+  `inquiry_type` VARCHAR(30)  NOT NULL DEFAULT '',
+  `name`         VARCHAR(120) NOT NULL,
+  `email`        VARCHAR(160) NOT NULL DEFAULT '',
+  `phone`        VARCHAR(40)  NOT NULL DEFAULT '',
+  `message`      TEXT NOT NULL,
+  `ip_address`   VARCHAR(45)  NOT NULL DEFAULT '',
+  `is_read`      TINYINT(1)   NOT NULL DEFAULT 0,
+  `created_at`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_is_read`    (`is_read`),
-  KEY `idx_created_at` (`created_at`)
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_channel`    (`channel`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Idempotent migrations for older `messages` tables that pre-date the
+-- channel / inquiry_type / ip_address columns. Uses information_schema +
+-- prepared statements because MySQL 5.7 lacks "ADD COLUMN IF NOT EXISTS".
+DROP PROCEDURE IF EXISTS rosali_migrate_messages;
+DELIMITER //
+CREATE PROCEDURE rosali_migrate_messages()
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'messages' AND COLUMN_NAME = 'channel') THEN
+    ALTER TABLE `messages` ADD COLUMN `channel` ENUM('email','whatsapp') NOT NULL DEFAULT 'email' AFTER `id`;
+    ALTER TABLE `messages` ADD INDEX `idx_channel` (`channel`);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'messages' AND COLUMN_NAME = 'inquiry_type') THEN
+    ALTER TABLE `messages` ADD COLUMN `inquiry_type` VARCHAR(30) NOT NULL DEFAULT '' AFTER `channel`;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'messages' AND COLUMN_NAME = 'ip_address') THEN
+    ALTER TABLE `messages` ADD COLUMN `ip_address` VARCHAR(45) NOT NULL DEFAULT '' AFTER `message`;
+  END IF;
+END //
+DELIMITER ;
+CALL rosali_migrate_messages();
+DROP PROCEDURE rosali_migrate_messages;
 
 CREATE TABLE IF NOT EXISTS `media` (
   `id`              INT(10) UNSIGNED NOT NULL AUTO_INCREMENT,
