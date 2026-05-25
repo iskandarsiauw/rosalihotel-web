@@ -55,6 +55,10 @@ function App(){
   const [theme]=useState('<?= $theme ?>');
   const [lang,setLang]=useState(()=>localStorage.getItem('rosali_lang')||'id');
   const [form,setForm]=useState({name:'',phone:'',type:'stay',msg:''});
+  const [mode,setMode]=useState('wa'); // 'wa' = WhatsApp form, 'email' = Email form
+  const [eform,setEform]=useState({first:'',last:'',phone:'',email:'',message:'',website:''});
+  const [esending,setEsending]=useState(false);
+  const [estatus,setEstatus]=useState(null); // {ok:bool,msg:str}
   const { isMobile } = useResponsive();
   initRosali(theme,lang);
   useEffect(()=>{ localStorage.setItem('rosali_lang',lang); },[lang]);
@@ -75,6 +79,32 @@ function App(){
       ?`Hello Rosali Hotel,\n\nName: ${form.name}\nPhone: ${form.phone}\nInquiry type: ${types[form.type]}\n\nMessage: ${form.msg}\n\nThank you.`
       :`Halo Rosali Hotel,\n\nNama: ${form.name}\nTelepon: ${form.phone}\nJenis pertanyaan: ${types[form.type]}\n\nPesan: ${form.msg}\n\nTerima kasih.`;
     window.open(`https://wa.me/6287851515500?text=${encodeURIComponent(txt)}`,'_blank');
+  };
+
+  const sendEmail=async(e)=>{
+    e.preventDefault();
+    if(esending) return;
+    if(!eform.first.trim() || !eform.email.trim() || !eform.message.trim()){
+      setEstatus({ok:false,msg:en?'Please fill in name, email, and comment.':'Mohon isi nama, email, dan pesan.'});
+      return;
+    }
+    setEsending(true); setEstatus(null);
+    try{
+      const fd = new FormData();
+      Object.entries(eform).forEach(([k,v])=>fd.append(k,v));
+      const r = await fetch('contact_submit.php',{method:'POST',body:fd});
+      const d = await r.json().catch(()=>({}));
+      if(r.ok && d.ok){
+        setEstatus({ok:true,msg:en?'Thank you — your message has been sent.':'Terima kasih — pesan Anda telah dikirim.'});
+        setEform({first:'',last:'',phone:'',email:'',message:'',website:''});
+      } else {
+        setEstatus({ok:false,msg:d.error||(en?'Could not send. Please try again.':'Tidak dapat mengirim. Coba lagi.')});
+      }
+    } catch {
+      setEstatus({ok:false,msg:en?'Network error. Please try again.':'Kesalahan jaringan. Coba lagi.'});
+    } finally {
+      setEsending(false);
+    }
   };
 
   const input={
@@ -121,59 +151,158 @@ function App(){
             ))}
           </div>
 
-          {/* Quick contact buttons */}
+          {/* Quick contact buttons — toggle between WhatsApp & Email modes */}
           <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:36}}>
-            <RosaliBtn text={en?'Chat on WhatsApp':'Chat WhatsApp'} style={{fontSize:13}}/>
-            <a href="mailto:rosalihotel@gmail.com" style={{
-              display:'inline-flex',alignItems:'center',gap:8,
-              border:'1px solid var(--accent)',color:'var(--accent)',
+            <button onClick={()=>setMode('wa')} style={{
+              display:'inline-flex',alignItems:'center',gap:8,cursor:'pointer',
+              background: mode==='wa' ? 'var(--accent)' : 'transparent',
+              border:'1px solid var(--accent)',
+              color: mode==='wa' ? 'var(--bg)' : 'var(--accent)',
               padding:'11px 20px',borderRadius:2,fontFamily:'var(--font-b)',
-              fontSize:13,letterSpacing:'0.04em',transition:'background .2s'}}
-              onMouseEnter={e=>e.currentTarget.style.background='var(--bg2)'}
-              onMouseLeave={e=>e.currentTarget.style.background='transparent'}
-            >✉ Email Us</a>
+              fontSize:13,letterSpacing:'0.04em',transition:'all .2s'}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              {en?'Chat on WhatsApp':'Chat WhatsApp'}
+            </button>
+            <button onClick={()=>setMode('email')} style={{
+              display:'inline-flex',alignItems:'center',gap:8,cursor:'pointer',
+              background: mode==='email' ? 'var(--accent)' : 'transparent',
+              border:'1px solid var(--accent)',
+              color: mode==='email' ? 'var(--bg)' : 'var(--accent)',
+              padding:'11px 20px',borderRadius:2,fontFamily:'var(--font-b)',
+              fontSize:13,letterSpacing:'0.04em',transition:'all .2s'}}>
+              ✉ {en?'Email Us':'Email Kami'}
+            </button>
           </div>
 
-          {/* Inquiry Form → WhatsApp */}
-          <div style={{background:'var(--bg2)',borderRadius:4,padding:'24px',border:'1px solid var(--border)'}}>
-            <div style={{fontFamily:'var(--font-d)',fontSize:18,color:'var(--fg)',marginBottom:18}}>
-              {en?'Send Us a Message':'Kirim Pesan'}
+          {mode==='wa' ? (
+            /* Inquiry Form → WhatsApp */
+            <div style={{background:'var(--bg2)',borderRadius:4,padding:'24px',border:'1px solid var(--border)'}}>
+              <div style={{fontFamily:'var(--font-d)',fontSize:18,color:'var(--fg)',marginBottom:18}}>
+                {en?'Send Us a Message':'Kirim Pesan'}
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                <input placeholder={en?'Your Name':'Nama Anda'} value={form.name}
+                  onChange={e=>setForm({...form,name:e.target.value})}
+                  style={input}
+                  onFocus={e=>e.target.style.borderColor='var(--accent)'}
+                  onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                <input placeholder={en?'Phone / WhatsApp':'Telepon / WhatsApp'} value={form.phone}
+                  onChange={e=>setForm({...form,phone:e.target.value})}
+                  style={input}
+                  onFocus={e=>e.target.style.borderColor='var(--accent)'}
+                  onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}
+                  style={{...input,appearance:'none'}}>
+                  <option value="stay">{en?'Room Booking':'Pemesanan Kamar'}</option>
+                  <option value="event">{en?'Event / Meeting':'Acara / Rapat'}</option>
+                  <option value="cafe">{en?'Café Reservation':'Reservasi Café'}</option>
+                </select>
+                <textarea placeholder={en?'Your message...':'Pesan Anda...'} value={form.msg}
+                  onChange={e=>setForm({...form,msg:e.target.value})}
+                  rows={4} style={{...input,resize:'vertical'}}
+                  onFocus={e=>e.target.style.borderColor='var(--accent)'}
+                  onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                <button onClick={sendWa} style={{
+                  background:'var(--accent)',color:'var(--bg)',border:'none',
+                  padding:'13px',borderRadius:2,fontFamily:'var(--font-b)',
+                  fontSize:14,fontWeight:600,transition:'opacity .2s',cursor:'pointer',
+                  display:'flex',alignItems:'center',justifyContent:'center',gap:8}}
+                  onMouseEnter={e=>e.currentTarget.style.opacity='.82'}
+                  onMouseLeave={e=>e.currentTarget.style.opacity='1'}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  {en?'Send via WhatsApp':'Kirim via WhatsApp'}
+                </button>
+              </div>
             </div>
-            <div style={{display:'flex',flexDirection:'column',gap:10}}>
-              <input placeholder={en?'Your Name':'Nama Anda'} value={form.name}
-                onChange={e=>setForm({...form,name:e.target.value})}
-                style={input}
-                onFocus={e=>e.target.style.borderColor='var(--accent)'}
-                onBlur={e=>e.target.style.borderColor='var(--border)'}/>
-              <input placeholder={en?'Phone / WhatsApp':'Telepon / WhatsApp'} value={form.phone}
-                onChange={e=>setForm({...form,phone:e.target.value})}
-                style={input}
-                onFocus={e=>e.target.style.borderColor='var(--accent)'}
-                onBlur={e=>e.target.style.borderColor='var(--border)'}/>
-              <select value={form.type} onChange={e=>setForm({...form,type:e.target.value})}
-                style={{...input,appearance:'none'}}>
-                <option value="stay">{en?'Room Booking':'Pemesanan Kamar'}</option>
-                <option value="event">{en?'Event / Meeting':'Acara / Rapat'}</option>
-                <option value="cafe">{en?'Café Reservation':'Reservasi Café'}</option>
-              </select>
-              <textarea placeholder={en?'Your message...':'Pesan Anda...'} value={form.msg}
-                onChange={e=>setForm({...form,msg:e.target.value})}
-                rows={4} style={{...input,resize:'vertical'}}
-                onFocus={e=>e.target.style.borderColor='var(--accent)'}
-                onBlur={e=>e.target.style.borderColor='var(--border)'}/>
-              <button onClick={sendWa} style={{
-                background:'var(--accent)',color:'var(--bg)',border:'none',
-                padding:'13px',borderRadius:2,fontFamily:'var(--font-b)',
-                fontSize:14,fontWeight:600,transition:'opacity .2s',
-                display:'flex',alignItems:'center',justifyContent:'center',gap:8}}
-                onMouseEnter={e=>e.currentTarget.style.opacity='.82'}
-                onMouseLeave={e=>e.currentTarget.style.opacity='1'}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                {en?'Send via WhatsApp':'Kirim via WhatsApp'}
-              </button>
-            </div>
-          </div>
+          ) : (
+            /* Inquiry Form → Email (server-side mail) */
+            <form onSubmit={sendEmail} style={{background:'var(--bg2)',borderRadius:4,padding:'24px',border:'1px solid var(--border)'}}>
+              <div style={{fontFamily:'var(--font-d)',fontSize:18,color:'var(--fg)',marginBottom:6}}>
+                {en?'Email Us':'Email Kami'}
+              </div>
+              <div style={{fontSize:11,color:'var(--fg-muted)',marginBottom:18}}>
+                <span style={{color:'var(--accent)'}}>*</span> {en?'Indicates required field':'Wajib diisi'}
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:14}}>
+                <div>
+                  <label style={{display:'block',fontFamily:'var(--font-b)',fontSize:12,color:'var(--fg)',marginBottom:6}}>
+                    {en?'Name':'Nama'} <span style={{color:'var(--accent)'}}>*</span>
+                  </label>
+                  <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:10}}>
+                    <div>
+                      <input placeholder={en?'First':'Depan'} value={eform.first} required
+                        onChange={e=>setEform({...eform,first:e.target.value})}
+                        style={input}
+                        onFocus={e=>e.target.style.borderColor='var(--accent)'}
+                        onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                      <div style={{fontSize:10,color:'var(--fg-muted)',marginTop:3}}>{en?'First':'Depan'}</div>
+                    </div>
+                    <div>
+                      <input placeholder={en?'Last':'Belakang'} value={eform.last}
+                        onChange={e=>setEform({...eform,last:e.target.value})}
+                        style={input}
+                        onFocus={e=>e.target.style.borderColor='var(--accent)'}
+                        onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                      <div style={{fontSize:10,color:'var(--fg-muted)',marginTop:3}}>{en?'Last':'Belakang'}</div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label style={{display:'block',fontFamily:'var(--font-b)',fontSize:12,color:'var(--fg)',marginBottom:6}}>
+                    {en?'Phone Number':'Nomor Telepon'}
+                  </label>
+                  <input value={eform.phone}
+                    onChange={e=>setEform({...eform,phone:e.target.value})}
+                    style={input}
+                    onFocus={e=>e.target.style.borderColor='var(--accent)'}
+                    onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                </div>
+                <div>
+                  <label style={{display:'block',fontFamily:'var(--font-b)',fontSize:12,color:'var(--fg)',marginBottom:6}}>
+                    {en?'Email':'Email'} <span style={{color:'var(--accent)'}}>*</span>
+                  </label>
+                  <input type="email" value={eform.email} required
+                    onChange={e=>setEform({...eform,email:e.target.value})}
+                    style={input}
+                    onFocus={e=>e.target.style.borderColor='var(--accent)'}
+                    onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                </div>
+                <div>
+                  <label style={{display:'block',fontFamily:'var(--font-b)',fontSize:12,color:'var(--fg)',marginBottom:6}}>
+                    {en?'Comment':'Pesan'} <span style={{color:'var(--accent)'}}>*</span>
+                  </label>
+                  <textarea value={eform.message} required rows={5}
+                    onChange={e=>setEform({...eform,message:e.target.value})}
+                    style={{...input,resize:'vertical'}}
+                    onFocus={e=>e.target.style.borderColor='var(--accent)'}
+                    onBlur={e=>e.target.style.borderColor='var(--border)'}/>
+                </div>
+                {/* Honeypot — hidden from humans */}
+                <input type="text" name="website" value={eform.website}
+                  onChange={e=>setEform({...eform,website:e.target.value})}
+                  tabIndex="-1" autoComplete="off"
+                  style={{position:'absolute',left:'-9999px',width:1,height:1,opacity:0}}/>
+                {estatus && (
+                  <div style={{
+                    fontSize:13,padding:'10px 12px',borderRadius:2,
+                    background: estatus.ok ? 'rgba(0,128,0,0.08)' : 'rgba(200,0,0,0.08)',
+                    color: estatus.ok ? 'green' : 'var(--accent)',
+                    border:`1px solid ${estatus.ok?'rgba(0,128,0,0.3)':'var(--accent)'}`}}>
+                    {estatus.msg}
+                  </div>
+                )}
+                <button type="submit" disabled={esending} style={{
+                  background:'var(--accent)',color:'var(--bg)',border:'none',
+                  padding:'13px',borderRadius:2,fontFamily:'var(--font-b)',
+                  fontSize:14,fontWeight:600,transition:'opacity .2s',
+                  cursor: esending?'wait':'pointer',
+                  opacity: esending?.7:1}}>
+                  {esending ? (en?'Sending…':'Mengirim…') : (en?'Submit':'Kirim')}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* Map + photo */}

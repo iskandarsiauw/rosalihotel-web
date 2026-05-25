@@ -387,6 +387,9 @@ const CONTENT_FIELDS = [
     {key:'spot_market_desc_id',      label:'Spot 6 Description (ID)',   multi:true,                         dflt:'Situbondo memiliki pasar tradisional yang ramai dan workshop batik lokal. Temukan kain celup tangan unik dan oleh-oleh khas.'},
   ]},
   {id:'contact', label:'Contact', fields:[
+    /* Email routing — server-side only, NOT exposed to window.ROSALI */
+    {key:'contact_email_to',         label:'Email Recipient — To (required)',  hint:'Destination email when visitors submit the Email Us form.',                       raw:true, dflt:'rosalihotel@gmail.com'},
+    {key:'contact_email_cc',         label:'Email Recipient — CC (optional)',  hint:'Optional CC. Separate multiple addresses with commas. Leave blank to disable.',  raw:true, dflt:''},
     /* Page hero */
     {key:'contact_hero_sup_en',      label:'Page Tagline (EN)',                                             dflt:'Contact & Promo'},
     {key:'contact_hero_sup_id',      label:'Page Tagline (ID)',                                             dflt:'Kontak & Promo'},
@@ -994,25 +997,31 @@ function TabContent() {
 
   useEffect(() => {
     const defaults = {};
+    const rawFields = [];
     CONTENT_FIELDS.forEach(pg => pg.fields.forEach(f => {
       if (f.dflt !== undefined) defaults[f.key] = f.dflt;
+      if (f.raw) rawFields.push(f.key);
     }));
-    fetch('api/data.php?batch=rc', {credentials:'same-origin'})
-      .then(r => r.json())
-      .then(data => {
-        const dbData = Object.fromEntries(
-          Object.entries(data || {}).filter(([, v]) => v !== '')
-        );
-        setVals({...defaults, ...dbData});
-        setLoading(false);
-      })
-      .catch(() => { setVals(defaults); setLoading(false); });
+    Promise.all([
+      fetch('api/data.php?batch=rc', {credentials:'same-origin'}).then(r => r.json()).catch(() => ({})),
+      ...rawFields.map(k => apiGet(k).then(v => [k, v])),
+    ]).then(([rcData, ...rawPairs]) => {
+      const dbData = Object.fromEntries(
+        Object.entries(rcData || {}).filter(([, v]) => v !== '')
+      );
+      const rawData = Object.fromEntries(rawPairs.filter(([, v]) => v != null && v !== ''));
+      setVals({...defaults, ...dbData, ...rawData});
+      setLoading(false);
+    }).catch(() => { setVals(defaults); setLoading(false); });
   }, []);
 
   const doSave = async () => {
     const pg = CONTENT_FIELDS.find(p => p.id === activePage);
     if (!pg) return;
-    for (const f of pg.fields) await apiSet('rc_' + f.key, vals[f.key] || '');
+    for (const f of pg.fields) {
+      const key = f.raw ? f.key : ('rc_' + f.key);
+      await apiSet(key, vals[f.key] || '');
+    }
     setSaved(true); setTimeout(() => setSaved(false), 2000);
   };
 
